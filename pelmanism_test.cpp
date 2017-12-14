@@ -37,7 +37,7 @@ void setPair(int* pair, int arrayNum){
 	  pair[place] = i;
 	  break;
 	}
-	place = (place + 3) % 4;
+	place = (place + 1) % 4;
       }
     }
   }
