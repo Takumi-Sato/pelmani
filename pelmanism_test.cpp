@@ -7,6 +7,7 @@
 #define GPIO24 24
 #define GPIO25 25
 #define GPIO26 26
+#define BUTTON_NUM 4
 
 void setPair(int* pair, int arrayNum);
 int buttonSensing();
@@ -46,8 +47,8 @@ void setPair(int* pair, int arrayNum){
 
 int main(void){
   int status;
-  int blockGotten[4] = {0,0,0,0};
-  int keys[4] = {-1,-1,-1,-1};
+  int blockGotten[BUTTON_NUM] = {0,0,0,0};
+  int keys[BUTTON_NUM] = {-1,-1,-1,-1};
   
   if(wiringPiSetupGpio() == -1) return 1;
 
@@ -88,7 +89,7 @@ int main(void){
 }
 
 int buttonSensing(){
-  int status[4] = {0,0,0,0};
+  int status[BUTTON_NUM];
   while(true){
     status[0] = digitalRead(GPIO23);
     status[1] = digitalRead(GPIO24);
@@ -115,7 +116,7 @@ void playReactSound(int choosing, int* keys){
 }
 
 int judgeGameEnd(int *blockGotten){
-  for(int i = 0; i < 4; i++){
+  for(int i = 0; i < BUTTON_NUM; i++){
     if(blockGotten[i]!=1) return 0;
   }
   return 1;
@@ -123,11 +124,11 @@ int judgeGameEnd(int *blockGotten){
 
 // ゲーム開始時の処理
 void onGameStart(int* blockGotten, int* keys){
-  for(int i = 0; i< 4; i++){
+  for(int i = 0; i < BUTTON_NUM; i++){
     blockGotten[i] = 0;
     keys[i] = -1;
   }
-  setPair(keys, 4);
+  setPair(keys, BUTTON_NUM);
   
   gameState = waitFirstStep;
 }
