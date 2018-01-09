@@ -12,7 +12,7 @@ using namespace std;
 int main(){
   DIR *dir;
   struct dirent *dp;
-  string path = "/home/xiao/pelmani/test_txt/";
+  string path = "/home/xiao/pelmani/txt_data/";
 
   dir = opendir(path.c_str());
 
