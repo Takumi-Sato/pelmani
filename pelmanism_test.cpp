@@ -2,6 +2,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <wiringPi.h>
+#include <dirent.h>
+#include <string>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string.h>
 
 #define GPIO23 23
 #define GPIO24 24
@@ -18,6 +24,7 @@ void onSecondStep(int* blockGotten, int* keys);
 void onGameEnd();
 
 enum state {
+  loadText,
   gameStart,
   waitFirstStep,
   waitSecondStep,
@@ -59,10 +66,15 @@ int main(void){
 
   while(true) {
     switch(gameState) {
+      // ゲームに必要なテキストファイルの読み込み
+      case loadText:
+        // 各自の端末からのtextファイルを受け取る
+        // まだ未定義
+        
       // ゲーム開始
-    case gameStart:
-      onGameStart(blockGotten, keys);
-      break;
+      case gameStart:
+        onGameStart(blockGotten, keys);
+        break;
 
       // 各ターンの1手目
     case waitFirstStep:
