@@ -167,15 +167,36 @@ void translateTextToWav(vector<string> &wavfileList){
       fin.close();
 
       string rawdata(stream.str());
-    // 1, rawdata内の文字列を 「:」を境に分ける("名前: ネタ" の形式をとるはずなので)
+      // 1, rawdata内の文字列を 「:」を境に分ける("名前: ネタ" の形式をとるはずなので)
+      stringstream ss{rawdata};
+      string buf, name, neta;
+      if(getline(ss, buf, ":")){name = buf};
+      if(getline(ss, buf, ":")){neta = buf};
   
-    // 2, 分けた文字列をそれぞれ別のファイルとしてpelmani/txt_data下に保存
+      // 2, 分けた文字列をそれぞれ別のファイルとしてpelmani/txt_data下に保存
       // ファイルポインタの設定必要かも
+      int extent = filename.find_last_of(".");
+      string original = filename.substr(0, extent+1);
+      string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
+      string neta_txtfile = txtpath + original + "_neta.txt"; //ネタを格納するtxtファイル名
   
-    // 3, 保存した時のファイル名を元にファイルパスを指定し、名前の部分とネタの部分をwav化し、pelmani/wav_data下に保存
-    /* open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x   /var/lib/mecab/dic/open-jtalk/naist-jdic -ow 作成したい音源.wav 用意したテキスト.txt */
-    // 4, wavfileListに保存したwavのファイル名を追加する  
-  
+      ofstream nm(name_file);
+      nm << name << endl;
+      nm.close();
+      ofstream nt(neta_file);
+      nt << neta << endl;
+      nt.close();
+      
+      // 3, 保存した時のファイル名を元にファイルパスを指定し、名前の部分とネタの部分をwav化し、pelmani/wav_data下に保存
+      string name_wavfile = wavpath + original + "_name.wav"; //名前を格納するwavファイル名
+      string neta_wavfile = wavpath + original + "_neta.wav"; //ネタを格納するwavファイル名 
+      
+      system(("open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x   /var/lib/mecab/dic/open-jtalk/naist-jdic -ow " + name_wavfile + " " + name_txtfile));
+      system(("open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x   /var/lib/mecab/dic/open-jtalk/naist-jdic -ow " + neta_wavfile + " " + neta_txtfile));
+      
+      // 4, wavfileListに保存したwavのファイルパスを追加する  
+      wavfileList.push_back(name_wavfile);
+      wavfileList.push_back(neta_wavfile);
     }
     // ここまでで一つのネタ分
   }
