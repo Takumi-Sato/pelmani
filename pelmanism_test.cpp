@@ -173,8 +173,9 @@ void translateTextToWav(vector<string> &wavfileList){
       if(getline(ss, buf, ":")){name = buf};
       if(getline(ss, buf, ":")){neta = buf};
   
-      // 2, 分けた文字列をそれぞれ別のファイルとしてpelmani/txt_data下に保存
-      // ファイルポインタの設定必要かも
+      // 2, 分けた文字列を加工して、それぞれ別のファイルとしてpelmani/txt_data下に保存
+      name = name + "さん";
+      neta = name +"さん の カミングアウト    " + neta;
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent+1);
       string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
