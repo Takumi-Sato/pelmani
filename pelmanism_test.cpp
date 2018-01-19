@@ -8,12 +8,15 @@
 #include <fstream>
 #include <sstream>
 #include <string.h>
+#include <vector>
 
 #define GPIO23 23
 #define GPIO24 24
 #define GPIO25 25
 #define GPIO26 26
 #define BUTTON_NUM 4
+
+using namespace std;
 
 void setPair(int* pair);
 int buttonSensing();
@@ -161,7 +164,7 @@ void translateTextToWav(vector<string> &wavfileList){
       string complete_path = txtpath + filename;
       ifstream fin(complete_path.c_str());
 
-      if (!fin) return 1;
+      if (!fin) return;
 
       stringstream stream;
       stream << fin.rdbuf();
@@ -171,8 +174,8 @@ void translateTextToWav(vector<string> &wavfileList){
       // 1, rawdata内の文字列を 「:」を境に分ける("名前: ネタ" の形式をとるはずなので)
       stringstream ss{rawdata};
       string buf, name, neta;
-      if(getline(ss, buf, ":")){name = buf};
-      if(getline(ss, buf, ":")){neta = buf};
+      if(getline(ss, buf, ':')){name = buf;}
+      if(getline(ss, buf, ':')){neta = buf;}
   
       // 2, 分けた文字列を加工して、それぞれ別のファイルとしてpelmani/txt_data下に保存
       name = name + "さん";
@@ -234,11 +237,12 @@ void onLoadText(){
   string txtpath = "/home/xiao/pelmani/txt_data/";
   
   string first = txtpath + "first.txt";
+  
   ofstream nm(first.c_str());
   nm << "おさか: タイキック" << endl;
   nm.close();
   
-  string second = txtpath + "second.txt"
+  string second = txtpath + "second.txt";
   ofstream nt(second.c_str());
   nt << "シャオ: むのう" << endl;
   nt.close();
@@ -272,7 +276,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     //空きマス(0)を見つけたら選択中(2)に設定
     if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
-      playReactSound(choosing,keys,vector<string> &wavfileList);
+      playReactSound(choosing,keys,wavfileList);
       break;
     }
   }
@@ -287,7 +291,6 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     choosing = buttonSensing();
     if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
-      playReactSound(choosing,keys);
       break;
     }
   }
@@ -298,13 +301,13 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       if(keys[choosing] == keys[i]){
 	blockGotten[choosing] = 1;
 	blockGotten[i] = 1;
-        playReactSound(choosing,keys,vector<string> &wavfileList);
+        playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
-        playComingOut((key[choosing] * 2 + 1), wavfileList);
+        playComingOut((keys[choosing] * 2 + 1), wavfileList);
       } else {
 	blockGotten[choosing] = 0;
 	blockGotten[i] = 0;
-        playReactSound(choosing,keys,vector<string> &wavfileList);
+        playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
       }
     }
