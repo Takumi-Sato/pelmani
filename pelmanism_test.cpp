@@ -15,9 +15,10 @@
 #define GPIO26 26
 #define BUTTON_NUM 4
 
-void setPair(int* pair, int arrayNum);
+void setPair(int* pair);
 int buttonSensing();
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList);
+void playComingOut(int index);
 void resetResource();
 void translateTextToWav(vector<string> &wavfileList);
 int judgeGameEnd(int* blockGotten);
@@ -35,21 +36,20 @@ enum state {
   gameEnd,
 };
 
-enum state gameState = gameStart;
+enum state gameState = loadText;
 
-void setPair(int* pair, int arrayNum){
-  int flag = 1;
+void setPair(int* pair){
   int place;
   srand((unsigned)time(NULL));
-  for(int i = 0; i < arrayNum/2 ; i++){
+  for(int i = 0; i < BUTTON_NUM/2 ; i++){
     for(int j = 0 ; j < 2 ; j++){
-      place = rand() % 4;
+      place = rand() % BUTTON_NUM;
       while(true){
       	if(pair[place] == -1) {
 	  pair[place] = i;
 	  break;
 	}
-	place = (place + 1) % 4;
+	place = (place + 1) % BUTTON_NUM;
       }
     }
   }
@@ -84,12 +84,12 @@ int main(void){
 
       // 各ターンの1手目
     case waitFirstStep:
-      onFirstStep(blockGotten, keys);
+      onFirstStep(blockGotten, keys, wavfileList);
       break;
 
       // 各ターンの2手目
     case waitSecondStep:
-      onSecondStep(blockGotten, keys);
+      onSecondStep(blockGotten, keys, wavfileList);
       break;
 
       // ゲーム終了
@@ -107,6 +107,7 @@ int main(void){
 }
 
 int buttonSensing(){
+  // pin番号など確定次第、改造必須
   int status[BUTTON_NUM];
   while(true){
     status[0] = digitalRead(GPIO23);
@@ -122,17 +123,17 @@ int buttonSensing(){
 
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList){
   // 実際にはwavfileListを参照して再生するwavファイルを選択すること
-  // switch文以外で実装すべきかも
-  switch(keys[choosing]){
-  case 0:
-    system("sudo aplay /home/xiao/wavmusic/choose0.wav");
-    break;
-  case 1:
-    system("sudo aplay /home/xiao/wavmusic/choose1.wav");
-    break;
-  default:
-    break;
-  }
+  int index = keys[choosing] * 2;
+  string reactFile = wavfileList[index];
+  string command = "sudo aplay " + reactFile;
+  system(command.c_str());
+  return;
+}
+
+void playComingOut(int index, vector<string> &wavfileList){
+  string command = "sudo aplay " + wavfileList[index];
+  system(command.c_str());
+  return;
 }
 
 void resetResource(){
@@ -181,19 +182,24 @@ void translateTextToWav(vector<string> &wavfileList){
       string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
       string neta_txtfile = txtpath + original + "_neta.txt"; //ネタを格納するtxtファイル名
   
-      ofstream nm(name_file);
+      ofstream nm(name_txtfile.c_str());
       nm << name << endl;
       nm.close();
-      ofstream nt(neta_file);
+      ofstream nt(neta_txtfile.c_str());
       nt << neta << endl;
       nt.close();
       
       // 3, 保存した時のファイル名を元にファイルパスを指定し、名前の部分とネタの部分をwav化し、pelmani/wav_data下に保存
       string name_wavfile = wavpath + original + "_name.wav"; //名前を格納するwavファイル名
-      string neta_wavfile = wavpath + original + "_neta.wav"; //ネタを格納するwavファイル名 
+      string neta_wavfile = wavpath + original + "_neta.wav"; //ネタを格納するwavファイル名
       
-      system(("open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x   /var/lib/mecab/dic/open-jtalk/naist-jdic -ow " + name_wavfile + " " + name_txtfile));
-      system(("open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x   /var/lib/mecab/dic/open-jtalk/naist-jdic -ow " + neta_wavfile + " " + neta_txtfile));
+      string jtalk_command = "open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x /var/lib/mecab/dic/open-jtalk/naist-jdic -ow ";
+      
+      string name_command = jtalk_command + name_wavfile + " " + name_txtfile;
+      string neta_command = jtalk_command + neta_wavfile + " " + neta_txtfile;
+      
+      system(name_command.c_str());
+      system(neta_command.c_str());
       
       // 4, wavfileListに保存したwavのファイルパスを追加する  
       wavfileList.push_back(name_wavfile);
@@ -202,6 +208,7 @@ void translateTextToWav(vector<string> &wavfileList){
     // ここまでで一つのネタ分
   }
   // end for
+  return;
 }
 
 
@@ -223,17 +230,32 @@ void onLoadText(){
     break;
   }
   
+  //テスト用プリセット
+  string txtpath = "/home/xiao/pelmani/txt_data/";
+  
+  string first = txtpath + "first.txt";
+  ofstream nm(first.c_str());
+  nm << "おさか: タイキック" << endl;
+  nm.close();
+  
+  string second = txtpath + "second.txt"
+  ofstream nt(second.c_str());
+  nt << "シャオ: むのう" << endl;
+  nt.close();
+  
+  //プリセットここまで
   
   gameState = gameStart;
 }
 
 // ゲーム開始時の処理
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
+  // マス取得状態とマスに割り当てられているkeyの初期化
   for(int i = 0; i < BUTTON_NUM; i++){
     blockGotten[i] = 0;
     keys[i] = -1;
   }
-  setPair(keys, BUTTON_NUM);
+  setPair(keys);
   wavfileList.clear();
   
   // wavfileListをすでに参照で受け取っているのでこの関数呼び出しは不正になるかも. コンパイルエラー時注意.
@@ -247,7 +269,8 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   int choosing = -1;
   while(true){
     choosing = buttonSensing();
-    if(blockGotten[choosing]==0){
+    //空きマス(0)を見つけたら選択中(2)に設定
+    if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
       playReactSound(choosing,keys,vector<string> &wavfileList);
       break;
@@ -259,17 +282,17 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
  
 // 各ターンの2手目が打たれるのを待っているときの処理
 void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
-  // まだゲームが終了しないなら1手目に戻る
   int choosing = -1;
   while(true){
     choosing = buttonSensing();
-    if(blockGotten[choosing]==0){
+    if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
       playReactSound(choosing,keys);
       break;
     }
   }
   for(int i = 0; i < 4; i++){
+    //1手目の箇所を探査
     if(i == choosing) continue;
     if(blockGotten[i] == 2){
       if(keys[choosing] == keys[i]){
@@ -277,6 +300,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 	blockGotten[i] = 1;
         playReactSound(choosing,keys,vector<string> &wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
+        playComingOut((key[choosing] * 2 + 1), wavfileList);
       } else {
 	blockGotten[choosing] = 0;
 	blockGotten[i] = 0;
@@ -300,7 +324,8 @@ void onGameEnd() {
   system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
   // ゲームをリスタートするならゲーム開始状態へ移行
   while(true){
+    // 実際はスライダーによるtxt受付へのモードチェンジを待つ
     if(buttonSensing()) break;
   }
-  gameState = gameStart;
+  gameState = loadText;
 }
