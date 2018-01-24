@@ -9,6 +9,7 @@
 #include <sstream>
 #include <string.h>
 #include <vector>
+#include <map>
 
 #define GPIO23 23
 #define GPIO24 24
@@ -18,12 +19,12 @@
 
 using namespace std;
 
-void setPair(int* pair);
+void setPair(int* pair, int fileNum);
 int buttonSensing();
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList);
 void playComingOut(int index);
 void resetResource();
-void translateTextToWav(vector<string> &wavfileList);
+int translateTextToWav(vector<string> &wavfileList);
 int judgeGameEnd(int* blockGotten);
 void onLoadText();
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList);
@@ -41,10 +42,11 @@ enum state {
 
 enum state gameState = loadText;
 
-void setPair(int* pair){
+void setPair(int* pair, int fileNum){
   int place;
   srand((unsigned)time(NULL));
-  for(int i = 0; i < BUTTON_NUM/2 ; i++){
+  int pairs = (filenum < BUTTON_NUM/2) ? BUTTON_NUM / 2 - 1 : BUTTON_NUM/2; 
+  for(int i = 0; i < pairs ; i++){
     for(int j = 0 ; j < 2 ; j++){
       place = rand() % BUTTON_NUM;
       while(true){
@@ -150,17 +152,20 @@ void resetResource(){
 }
 
 
-void translateTextToWav(vector<string> &wavfileList){
+int translateTextToWav(vector<string> &wavfileList){
   DIR *dir;
   struct dirent *dp;
   string txtpath = "/home/xiao/pelmani/txt_data/";
   string wavpath = "/home/xiao/pelmani/wav_data/";
-  vector<string> nameList; //名前衝突判定
+  map<string, int> nameList; //名前衝突判定
+  int tmp;
+  int fileNum = 0;
   
   dir = opendir(txtpath.c_str());
   // for(全てのネタtxtファイルを走査しきるまで)
   for(dp = readdir(dir) ; dp != NULL ; dp = readdir(dir)){
     if(strstr(dp->d_name,".txt") != NULL){ 
+      fileNum++;
       string filename = string(dp->d_name);
       string complete_path = txtpath + filename;
       ifstream fin(complete_path.c_str());
@@ -181,6 +186,13 @@ void translateTextToWav(vector<string> &wavfileList){
       // 2, 分けた文字列を加工して、それぞれ別のファイルとしてpelmani/txt_data下に保存
       name = name + "さん";
       neta = "の カミングアウト    " + neta;
+      
+      nameList.insert(make_pair(name,fileNum));
+      
+      // 同じ人のネタが出たら序数を振る
+      tmp = nameList.count(name);
+      if(tmp > 1) name = name + to_String(tmp);
+      
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent+1);
       string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
@@ -212,7 +224,7 @@ void translateTextToWav(vector<string> &wavfileList){
     // ここまでで一つのネタ分
   }
   // end for
-  return;
+  return fileNum;
 }
 
 
@@ -255,6 +267,8 @@ void onLoadText(){
 
 // ゲーム開始時の処理
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
+  int fileNum;
+  
   // マス取得状態とマスに割り当てられているkeyの初期化
   for(int i = 0; i < BUTTON_NUM; i++){
     blockGotten[i] = 0;
@@ -263,10 +277,29 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
   wavfileList.clear();
   
   // wavfileListをすでに参照で受け取っているのでこの関数呼び出しは不正になるかも. コンパイルエラー時注意.
-  translateTextToWav(wavfileList);
+  fileNum = translateTextToWav(wavfileList);
   
-  setPair(keys);
-  gameState = waitFirstStep;
+  /* ファイル数に応じた処理 */
+  
+  // 0~1
+    // 強制終了
+  if (fileNum < 2){
+    // ゲームできないお知らせ音声
+    gameState = gameEnd;
+    return;
+  } else {
+    // 2~3
+      // wavfileListにただの音、パーティーゲームならではの命令、ドボンマスを埋める
+    // 4~7
+      // wavfileListにドボンとただの音を8組ぶんになるように入れる
+    // 8~
+      // 特に変更箇所はなし
+  
+    // setPairはドボンマスの考慮を入れる
+    setPair(keys, fileNum);
+  
+    gameState = waitFirstStep;
+  }
 }
 
 // 各ターンの1手目が打たれるのを待っているときの処理
@@ -277,12 +310,17 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     //空きマス(0)を見つけたら選択中(2)に設定
     if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
-      playReactSound(choosing,keys,wavfileList);
       break;
     }
   }
-  // 1手目が打たれたら2手目の待機に移動
-  gameState = waitSecondStep;
+  if(keys[choosing] == -1) {
+    blockGotten[choosing] = 1;
+    // ドボン！
+  } else {
+    playReactSound(choosing,keys,wavfileList);
+    // 1手目が打たれたら2手目の待機に移動
+    gameState = waitSecondStep;
+  }
 }
  
 // 各ターンの2手目が打たれるのを待っているときの処理
@@ -299,14 +337,18 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     //1手目の箇所を探査
     if(i == choosing) continue;
     if(blockGotten[i] == 2){
-      if(keys[choosing] == keys[i]){
+      if(keys[choosing] == -1){ // ドボンマスにヒット
+        blockGotten[choosing] = 1;
+	blockGotten[i] = 0;
+        // ドボン！
+      } else if(keys[choosing] == keys[i]){ // ペアになってる！
 	blockGotten[choosing] = 1;
 	blockGotten[i] = 1;
         playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
         playReactSound(choosing,keys,wavfileList);
         playComingOut((keys[choosing] * 2 + 1), wavfileList);
-      } else {
+      } else { //ペアになってない
 	blockGotten[choosing] = 0;
 	blockGotten[i] = 0;
         playReactSound(choosing,keys,wavfileList);
