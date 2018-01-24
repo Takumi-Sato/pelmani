@@ -155,7 +155,8 @@ void translateTextToWav(vector<string> &wavfileList){
   struct dirent *dp;
   string txtpath = "/home/xiao/pelmani/txt_data/";
   string wavpath = "/home/xiao/pelmani/wav_data/";
-
+  vector<string> nameList; //名前衝突判定
+  
   dir = opendir(txtpath.c_str());
   // for(全てのネタtxtファイルを走査しきるまで)
   for(dp = readdir(dir) ; dp != NULL ; dp = readdir(dir)){
@@ -259,12 +260,12 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     blockGotten[i] = 0;
     keys[i] = -1;
   }
-  setPair(keys);
   wavfileList.clear();
   
   // wavfileListをすでに参照で受け取っているのでこの関数呼び出しは不正になるかも. コンパイルエラー時注意.
   translateTextToWav(wavfileList);
   
+  setPair(keys);
   gameState = waitFirstStep;
 }
 
