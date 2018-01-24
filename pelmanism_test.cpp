@@ -180,7 +180,7 @@ void translateTextToWav(vector<string> &wavfileList){
   
       // 2, 分けた文字列を加工して、それぞれ別のファイルとしてpelmani/txt_data下に保存
       name = name + "さん";
-      neta = name +"さん の カミングアウト    " + neta;
+      neta = "の カミングアウト    " + neta;
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent+1);
       string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
@@ -304,6 +304,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 	blockGotten[i] = 1;
         playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
+        playReactSound(choosing,keys,wavfileList);
         playComingOut((keys[choosing] * 2 + 1), wavfileList);
       } else {
 	blockGotten[choosing] = 0;
