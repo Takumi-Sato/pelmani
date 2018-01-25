@@ -267,7 +267,8 @@ void onLoadText(){
 
 // ゲーム開始時の処理
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
-  int fileNum;
+  int fileNum, rnd1, rnd2;
+  string name_asset_path, neta_asset_path, rnd_name, rnd_neta;
   
   // マス取得状態とマスに割り当てられているkeyの初期化
   for(int i = 0; i < BUTTON_NUM; i++){
@@ -288,12 +289,25 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     gameState = gameEnd;
     return;
   } else {
+    srand((unsigned)time(NULL));
     // 2~3
-      // wavfileListにただの音、パーティーゲームならではの命令、ドボンマスを埋める
+      // wavfileListにただの音、パーティーゲームならではの命令を7組まで埋める
     // 4~7
-      // wavfileListにドボンとただの音を8組ぶんになるように入れる
+      // wavfileListにただの音を7組分になるように入れる
     // 8~
       // 特に変更箇所はなし
+    rnd1 = rand() % 10;
+    rnd2 = rand() % 10;
+    name_asset_path = "/home/xiao/pelmani/name_asset/asset"
+    neta_asset_path = "/home/xiao/pelmani/neta_asset/asset"
+    for(int i = 0; i < 7 - fileNum; i++){
+      rnd_name = name_asset_path + to_String(rnd1)+".wav";
+      rnd_neta = name_asset_path + to_String(rnd2)+".wav";
+      wavfileList.push_back(rnd_name);
+      wavfileList.push_back(rnd_neta);
+      rnd1 = (rnd1 + 3) % 10;
+      rnd1 = (rnd2 + 7) % 10;
+    }
   
     // setPairはドボンマスの考慮を入れる
     setPair(keys, fileNum);
@@ -316,11 +330,13 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   if(keys[choosing] == -1) {
     blockGotten[choosing] = 1;
     // ドボン！
+    system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
   } else {
     playReactSound(choosing,keys,wavfileList);
     // 1手目が打たれたら2手目の待機に移動
     gameState = waitSecondStep;
   }
+  return;
 }
  
 // 各ターンの2手目が打たれるのを待っているときの処理
@@ -341,6 +357,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         blockGotten[choosing] = 1;
 	blockGotten[i] = 0;
         // ドボン！
+        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
 	blockGotten[choosing] = 1;
 	blockGotten[i] = 1;
@@ -359,6 +376,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 
   if(judgeGameEnd(blockGotten)){    
     // ゲームが終了するならゲーム終了状態へ移行
+    system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
     gameState = gameEnd;
   } else {
     // ゲームが続くなら1手目に戻る
@@ -368,7 +386,6 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 
 // ゲーム終了時の処理
 void onGameEnd() {
-  system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
   // ゲームをリスタートするならゲーム開始状態へ移行
   while(true){
     // 実際はスライダーによるtxt受付へのモードチェンジを待つ
