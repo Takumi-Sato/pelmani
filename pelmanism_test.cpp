@@ -203,7 +203,7 @@ int translateTextToWav(vector<string> &wavfileList){
       if(tmp > 1) name = name + to_string(tmp);
       
       int extent = filename.find_last_of(".");
-      string original = filename.substr(0, extent+1);
+      string original = filename.substr(0, extent);
       string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
       string neta_txtfile = txtpath + original + "_neta.txt"; //ネタを格納するtxtファイル名
   
@@ -324,12 +324,13 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     
     int timer = 5;
     while(timer){
+      cout << GPIO19 << "\n";
       digitalWrite(GPIO19, rand()%2);
       digitalWrite(GPIO20, rand()%2);
       digitalWrite(GPIO21, rand()%2);
       digitalWrite(GPIO22, rand()%2);
       timer--;
-      delay(100);
+      delay(300);
     }
     digitalWrite(GPIO19, 1);
     digitalWrite(GPIO20, 1);
