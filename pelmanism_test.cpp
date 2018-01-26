@@ -49,7 +49,7 @@ enum state gameState = loadText;
 void setPair(int* pair, int fileNum){
   int place;
   srand((unsigned)time(NULL));
-  int pairs = (filenum < BUTTON_NUM/2) ? BUTTON_NUM / 2 - 1 : BUTTON_NUM/2; 
+  int pairs = (fileNum < BUTTON_NUM/2) ? BUTTON_NUM / 2 - 1 : BUTTON_NUM/2; 
   for(int i = 0; i < pairs ; i++){
     for(int j = 0 ; j < 2 ; j++){
       place = rand() % BUTTON_NUM;
@@ -179,7 +179,7 @@ int translateTextToWav(vector<string> &wavfileList){
       string complete_path = txtpath + filename;
       ifstream fin(complete_path.c_str());
 
-      if (!fin) return;
+      if (!fin) return -1;
 
       stringstream stream;
       stream << fin.rdbuf();
@@ -200,7 +200,7 @@ int translateTextToWav(vector<string> &wavfileList){
       
       // 同じ人のネタが出たら序数を振る
       tmp = nameList.count(name);
-      if(tmp > 1) name = name + to_String(tmp);
+      if(tmp > 1) name = name + to_string(tmp);
       
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent+1);
@@ -308,11 +308,11 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
       // 特に変更箇所はなし
     rnd1 = rand() % 10;
     rnd2 = rand() % 10;
-    name_asset_path = "/home/xiao/pelmani/name_asset/asset"
-    neta_asset_path = "/home/xiao/pelmani/neta_asset/asset"
+    name_asset_path = "/home/xiao/pelmani/name_asset/asset";
+    neta_asset_path = "/home/xiao/pelmani/neta_asset/asset";
     for(int i = 0; i < 7 - fileNum; i++){
-      rnd_name = name_asset_path + to_String(rnd1)+".wav";
-      rnd_neta = name_asset_path + to_String(rnd2)+".wav";
+      rnd_name = name_asset_path + to_string(rnd1)+".wav";
+      rnd_neta = name_asset_path + to_string(rnd2)+".wav";
       wavfileList.push_back(rnd_name);
       wavfileList.push_back(rnd_neta);
       rnd1 = (rnd1 + 3) % 10;
