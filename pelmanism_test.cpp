@@ -238,9 +238,10 @@ int judgeGameEnd(int *blockGotten){
 // ネタデータ受付時の処理
 void onLoadText(){
   resetResource();
-  
+  // 音声「スマートフォンから投稿してください」
+  system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset2.wav");
   while(true){
-    // ここでネタデータを受け付ける？
+    // ここでネタデータを受け付ける
     
     // ボタン数の半分ネタデータを受け付けるか、スタートボタンが押されたらbreak
     break;
@@ -311,6 +312,8 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
   
     // setPairはドボンマスの考慮を入れる
     setPair(keys, fileNum);
+    // 音声「ゲームを開始します」
+    system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset1.wav");
   
     gameState = waitFirstStep;
   }
@@ -331,6 +334,8 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     blockGotten[choosing] = 1;
     // ドボン！
     system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+    // 音声「次の人に交代してください」
+    system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
     playReactSound(choosing,keys,wavfileList);
     // 1手目が打たれたら2手目の待機に移動
@@ -358,6 +363,8 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 	blockGotten[i] = 0;
         // ドボン！
         system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+        // 音声「次の人に交代してください」
+        system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
 	blockGotten[choosing] = 1;
 	blockGotten[i] = 1;
@@ -370,6 +377,8 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 	blockGotten[i] = 0;
         playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
+        // 音声「次の人に交代してください」
+        system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       }
     }
   }
@@ -387,6 +396,8 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 // ゲーム終了時の処理
 void onGameEnd() {
   // ゲームをリスタートするならゲーム開始状態へ移行
+  // 音声「ゲームを終了します」
+  system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset3.wav");
   while(true){
     // 実際はスライダーによるtxt受付へのモードチェンジを待つ
     if(buttonSensing()) break;
