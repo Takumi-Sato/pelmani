@@ -11,6 +11,10 @@
 #include <vector>
 #include <map>
 
+#define GPIO19 19
+#define GPIO20 20
+#define GPIO21 21
+#define GPIO22 22
 #define GPIO23 23
 #define GPIO24 24
 #define GPIO25 25
@@ -69,6 +73,11 @@ int main(void){
   
   if(wiringPiSetupGpio() == -1) return 1;
 
+  pinMode(GPIO19,OUTPUT);
+  pinMode(GPIO20,OUTPUT);
+  pinMode(GPIO21,OUTPUT);
+  pinMode(GPIO22,OUTPUT);
+  
   pinMode(GPIO23,INPUT);
   pinMode(GPIO24,INPUT);
   pinMode(GPIO25,INPUT);
@@ -312,6 +321,20 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
   
     // setPairはドボンマスの考慮を入れる
     setPair(keys, fileNum);
+    
+    int timer = 5;
+    while(timer){
+      digitalWrite(GPIO19, rand()%2);
+      digitalWrite(GPIO20, rand()%2);
+      digitalWrite(GPIO21, rand()%2);
+      digitalWrite(GPIO22, rand()%2);
+      timer--;
+      delay(100);
+    }
+    digitalWrite(GPIO19, 1);
+    digitalWrite(GPIO20, 1);
+    digitalWrite(GPIO21, 1);
+    digitalWrite(GPIO22, 1);
     // 音声「ゲームを開始します」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset1.wav");
   
