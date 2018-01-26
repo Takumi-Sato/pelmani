@@ -209,7 +209,7 @@ int translateTextToWav(vector<string> &wavfileList){
       string name_wavfile = wavpath + original + "_name.wav"; //名前を格納するwavファイル名
       string neta_wavfile = wavpath + original + "_neta.wav"; //ネタを格納するwavファイル名
       
-      string jtalk_command = "open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/nitech_jp_atr503_m001.htsvoice -x /var/lib/mecab/dic/open-jtalk/naist-jdic -ow ";
+      string jtalk_command = "open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/mei_normal.htsvoice -x /var/lib/mecab/dic/open-jtalk/naist-jdic -ow ";
       
       string name_command = jtalk_command + name_wavfile + " " + name_txtfile;
       string neta_command = jtalk_command + neta_wavfile + " " + neta_txtfile;
