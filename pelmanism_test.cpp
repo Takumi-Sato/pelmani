@@ -166,7 +166,7 @@ int translateTextToWav(vector<string> &wavfileList){
   struct dirent *dp;
   string txtpath = "/home/xiao/pelmani/txt_data/";
   string wavpath = "/home/xiao/pelmani/wav_data/";
-  map<string, int> nameList; //名前衝突判定
+  multimap<string, int> nameList; //名前衝突判定
   int tmp;
   int fileNum = 0;
   
@@ -196,11 +196,11 @@ int translateTextToWav(vector<string> &wavfileList){
       name = name + "さん";
       neta = "の カミングアウト    " + neta;
       
-      nameList.insert(make_pair(name,fileNum));
+      nameList.emplace(name,fileNum);
       
       // 同じ人のネタが出たら序数を振る
       tmp = nameList.count(name);
-      if(tmp > 1) name = name + to_string(tmp);
+      if(tmp > 1) name = name + " " +to_string(tmp);
       
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent);
@@ -267,7 +267,7 @@ void onLoadText(){
   
   string second = txtpath + "second.txt";
   ofstream nt(second.c_str());
-  nt << "シャオ: むのう" << endl;
+  nt << "おさか: むのう" << endl;
   nt.close();
   
   //プリセットここまで
