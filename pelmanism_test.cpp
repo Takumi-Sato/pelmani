@@ -324,7 +324,6 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     
     int timer = 5;
     while(timer){
-      cout << GPIO19 << "\n";
       digitalWrite(GPIO19, rand()%2);
       digitalWrite(GPIO20, rand()%2);
       digitalWrite(GPIO21, rand()%2);
@@ -392,6 +391,8 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
 	blockGotten[choosing] = 1;
 	blockGotten[i] = 1;
+        digitalWrite(i + 19, 0);
+        digitalWrite(choosing + 19, 0);
         playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
         playReactSound(choosing,keys,wavfileList);
