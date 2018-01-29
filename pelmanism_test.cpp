@@ -370,7 +370,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   } else {
     playReactSound(choosing,keys,wavfileList);
     // ボタンの点滅と次の手の待機は別プロセスで行う。
-    pid = fork();
+    PID = fork();
     
     // 共有メモリセグメント作成
     if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
@@ -378,10 +378,10 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         exit( EXIT_FAILURE );
     }
     
-    if(pid < 0){
+    if(PID < 0){
       std::cout << "Fork Failed." << std::endl;
       exit(1);
-    } else if (pid == 0){
+    } else if (PID == 0){
       // ボタンの点滅(子プロセス)
       while(*segaddr == 0){
         digitalWrite(choosing+19, 0);
@@ -431,7 +431,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       break;
     }
   }
-  waitpid(pid,&status,0);
+  waitpid(PID,&status,0);
   if (WIFEXITED(status)){
     printf("exit, status=%d\n", WEXITSTATUS(status));
   } else if (WIFSIGNALED(status)){
