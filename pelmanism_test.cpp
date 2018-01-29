@@ -10,6 +10,8 @@
 #include <string.h>
 #include <vector>
 #include <map>
+#include <sys/wait.h>
+#include <sys/shm.h>
 
 #define GPIO19 19
 #define GPIO20 20
@@ -45,6 +47,11 @@ enum state {
 };
 
 enum state gameState = loadText;
+
+/* 点滅プロセス管理用 */
+pid_t PID;
+int status, segid;
+int *segaddr;
 
 void setPair(int* pair, int fileNum){
   int place;
@@ -310,7 +317,7 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     rnd2 = rand() % 10;
     name_asset_path = "/home/xiao/pelmani/name_asset/asset";
     neta_asset_path = "/home/xiao/pelmani/neta_asset/asset";
-    for(int i = 0; i < 7 - fileNum; i++){
+    for(int i = 0; i < BUTTON_NUM/2 - 1 - fileNum; i++){
       rnd_name = name_asset_path + to_string(rnd1)+".wav";
       rnd_neta = name_asset_path + to_string(rnd2)+".wav";
       wavfileList.push_back(rnd_name);
@@ -356,13 +363,50 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   if(keys[choosing] == -1) {
     blockGotten[choosing] = 1;
     // ドボン！
+    digitalWrite(choosing+19, 0);
     system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
     playReactSound(choosing,keys,wavfileList);
-    // 1手目が打たれたら2手目の待機に移動
-    gameState = waitSecondStep;
+    // ボタンの点滅と次の手の待機は別プロセスで行う。
+    pid = fork();
+    
+    // 共有メモリセグメント作成
+    if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
+        perror( "shmget error." );
+        exit( EXIT_FAILURE );
+    }
+    
+    if(pid < 0){
+      std::cout << "Fork Failed." << std::endl;
+      exit(1);
+    } else if (pid == 0){
+      // ボタンの点滅(子プロセス)
+      while(*segaddr == 0){
+        digitalWrite(choosing+19, 0);
+        delay(500);
+        digitalWrite(choosing+19, 1);
+        delay(500);
+      }
+      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+            perror( "ChildProcess shmat error." );
+            exit(EXIT_FAILURE);
+        }
+        
+        *segaddr = 0;
+
+        //共有メモリのdetach
+        if (shmdt(segaddr) == -1) {
+            perror( "ChildProcess shmdt error." );
+            exit(EXIT_FAILURE);
+        }
+
+        exit(EXIT_SUCCESS);
+    } else {
+      // 1手目が打たれたら2手目の待機に移動(親プロセス)
+      gameState = waitSecondStep;
+    }
   }
   return;
 }
@@ -374,8 +418,26 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     choosing = buttonSensing();
     if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
+      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+        perror( "ParentProcess shmat error." );
+        exit(EXIT_FAILURE);
+      }
+      *segaddr = 1;
+      //共有メモリのdetach
+      if (shmdt(segaddr) == -1) {
+        perror( "ParentProcess shmdt error." );
+        exit(EXIT_FAILURE);
+      }
       break;
     }
+  }
+  waitpid(pid,&status,0);
+  if (WIFEXITED(status)){
+    printf("exit, status=%d\n", WEXITSTATUS(status));
+  } else if (WIFSIGNALED(status)){
+    printf("signal, sig=%d\n", WTERMSIG(status));
+  } else {
+    printf("abnormal exit\n");
   }
   for(int i = 0; i < 4; i++){
     //1手目の箇所を探査
