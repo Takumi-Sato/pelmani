@@ -10,6 +10,7 @@
 #include <string.h>
 #include <vector>
 #include <map>
+#include <unistd.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
 
