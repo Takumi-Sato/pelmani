@@ -14,6 +14,7 @@
 #include <sys/wait.h>
 #include <sys/shm.h>
 
+#define GPIO18 18
 #define GPIO19 19
 #define GPIO20 20
 #define GPIO21 21
@@ -28,6 +29,7 @@ using namespace std;
 
 void setPair(int* pair, int fileNum);
 int buttonSensing();
+void toggleGameMode(int state);
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList);
 void playComingOut(int index);
 void resetResource();
@@ -85,7 +87,8 @@ int main(void){
   pinMode(GPIO20,OUTPUT);
   pinMode(GPIO21,OUTPUT);
   pinMode(GPIO22,OUTPUT);
-  
+
+  pinMode(GPIO18,INPUT);
   pinMode(GPIO23,INPUT);
   pinMode(GPIO24,INPUT);
   pinMode(GPIO25,INPUT);
@@ -140,6 +143,15 @@ int buttonSensing(){
     if(status[1]) return 1;
     if(status[2]) return 2;
     if(status[3]) return 3;
+  }
+}
+
+void toggleGameMode(int state){
+  // state: 0->file waiting, 1->game mode
+  int input = 0;
+  while(true){
+    input = digitalRead(GPIO18);
+    if(input) return;
   }
 }
 
@@ -257,12 +269,9 @@ void onLoadText(){
   resetResource();
   // 音声「スマートフォンから投稿してください」
   system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset2.wav");
-  while(true){
-    // ここでネタデータを受け付ける
-    
-    // ボタン数の半分ネタデータを受け付けるか、スタートボタンが押されたらbreak
-    break;
-  }
+  
+  // ここでネタデータを受け付ける
+  toggleGameMode(0);
   
   //テスト用プリセット
   string txtpath = "/home/xiao/pelmani/txt_data/";
@@ -270,7 +279,7 @@ void onLoadText(){
   string first = txtpath + "first.txt";
   
   ofstream nm(first.c_str());
-  nm << "おさか:デバッグ中" << endl;
+  nm << "おさか:デバッグちゅう" << endl;
   nm.close();
   
   string second = txtpath + "second.txt";
@@ -403,7 +412,6 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 	  perror( "ChildProcess shmat error." );
 	  exit(EXIT_FAILURE);
 	}
-	cout << *segaddr << endl;
 	if(*segaddr == 1) break;
 	//共有メモリのdetach
 	if (shmdt(segaddr) == -1) {
@@ -440,7 +448,6 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       break;
     }
   }
-  cout << "戻っておいで!" << endl;
   waitpid(PID,&status,0);
   if (WIFEXITED(status)){
     printf("exit, status=%d\n", WEXITSTATUS(status));
@@ -448,6 +455,11 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     printf("signal, sig=%d\n", WTERMSIG(status));
   } else {
     printf("abnormal exit\n");
+  }
+  /* 共有メモリを破棄 */
+  if (shmctl(segid, IPC_RMID, NULL) == -1){
+    perror("ParentProcess shmctl error.");
+    exit(EXIT_FAILURE);
   }
   for(int i = 0; i < 4; i++){
     //1手目の箇所を探査
@@ -495,9 +507,8 @@ void onGameEnd() {
   // ゲームをリスタートするならゲーム開始状態へ移行
   // 音声「ゲームを終了します」
   system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset3.wav");
-  while(true){
-    // 実際はスライダーによるtxt受付へのモードチェンジを待つ
-    if(buttonSensing()) break;
-  }
+  // 実際はスライダーによるtxt受付へのモードチェンジを待つ
+  toggleGameMode(1);
+
   gameState = loadText;
 }
