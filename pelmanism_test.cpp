@@ -270,12 +270,12 @@ void onLoadText(){
   string first = txtpath + "first.txt";
   
   ofstream nm(first.c_str());
-  nm << "おさか: タイキック" << endl;
+  nm << "おさか:デバッグ中" << endl;
   nm.close();
   
   string second = txtpath + "second.txt";
   ofstream nt(second.c_str());
-  nt << "おさか: むのう" << endl;
+  nt << "おさか:眠い" << endl;
   nt.close();
   
   //プリセットここまで
@@ -371,40 +371,48 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   } else {
     playReactSound(choosing,keys,wavfileList);
     // ボタンの点滅と次の手の待機は別プロセスで行う。
-    PID = fork();
-    
     // 共有メモリセグメント作成
     if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
-        perror( "shmget error." );
-        exit( EXIT_FAILURE );
+      perror( "shmget error." );
+      exit( EXIT_FAILURE );
     }
+    
+    PID = fork();
     
     if(PID < 0){
       std::cout << "Fork Failed." << std::endl;
       exit(1);
     } else if (PID == 0){
       // ボタンの点滅(子プロセス)
-      while(*segaddr == 0){
+      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+	perror( "ChildProcess shmat error." );
+	exit(EXIT_FAILURE);
+      }
+      *segaddr = 0;
+      //共有メモリのdetach
+      if (shmdt(segaddr) == -1) {
+	perror( "ChildProcess shmdt error." );
+	exit(EXIT_FAILURE);
+      }
+      while(true){
         digitalWrite(choosing+19, 0);
         delay(500);
         digitalWrite(choosing+19, 1);
         delay(500);
+	if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+	  perror( "ChildProcess shmat error." );
+	  exit(EXIT_FAILURE);
+	}
+	cout << *segaddr << endl;
+	if(*segaddr == 1) break;
+	//共有メモリのdetach
+	if (shmdt(segaddr) == -1) {
+	  perror( "ChildProcess shmdt error." );
+	  exit(EXIT_FAILURE);	  
+	}
       }
-      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
-            perror( "ChildProcess shmat error." );
-            exit(EXIT_FAILURE);
-        }
-        
-        *segaddr = 0;
-
-        //共有メモリのdetach
-        if (shmdt(segaddr) == -1) {
-            perror( "ChildProcess shmdt error." );
-            exit(EXIT_FAILURE);
-        }
-
-        exit(EXIT_SUCCESS);
-    } else {
+      exit(EXIT_SUCCESS);
+      } else {
       // 1手目が打たれたら2手目の待機に移動(親プロセス)
       gameState = waitSecondStep;
     }
@@ -432,6 +440,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       break;
     }
   }
+  cout << "戻っておいで!" << endl;
   waitpid(PID,&status,0);
   if (WIFEXITED(status)){
     printf("exit, status=%d\n", WEXITSTATUS(status));
