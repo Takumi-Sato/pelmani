@@ -378,7 +378,6 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
-    playReactSound(choosing,keys,wavfileList);
     // ボタンの点滅と次の手の待機は別プロセスで行う。
     // 共有メモリセグメント作成
     if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
@@ -421,6 +420,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       }
       exit(EXIT_SUCCESS);
       } else {
+      playReactSound(choosing,keys,wavfileList);
       // 1手目が打たれたら2手目の待機に移動(親プロセス)
       gameState = waitSecondStep;
     }
