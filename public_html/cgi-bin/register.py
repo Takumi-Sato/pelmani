@@ -29,7 +29,15 @@ if not ( form.has_key("name") and form.has_key("text") ):
 #ファイル書込処理
 file = None
 try:
-    file = open("/tmp/pelmanism/data.txt", "a")
+    fileName = "/home/nijinoryu/pelmani/data_from_cgi"
+    files = os.listdir(fileName)
+    cnt = 1
+    for f in files:
+        cnt = cnt + 1
+    fileName = fileName + "/" + str(cnt) + ".txt"
+
+    file = open(fileName, "w")
+
 except IOError, (errno, msg):
     print ('except: Cannot open file')
     print ('errno: [%d] msg: [%s]' % (errno, msg))
@@ -37,7 +45,7 @@ except IOError, (errno, msg):
     print (os.popen('whoami').read())
 else:
     try:
-        file.write(form["name"].value + "," + form["text"].value + "\r\n")
+        file.write(form["name"].value + ":" + form["text"].value + "\r\n")
         print (u"書けた")
     except IOError:
         print (u"書けなかった")
@@ -45,4 +53,4 @@ else:
         if(file):
             file.close()
 
-print ('<script>location.href="http://10.0.0.10/~nijinoryu";</script>')
+#print ('<script>location.href="http://172.16.0.1";</script>')
