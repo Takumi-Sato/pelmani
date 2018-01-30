@@ -10,7 +10,11 @@
 #include <string.h>
 #include <vector>
 #include <map>
+#include <unistd.h>
+#include <sys/wait.h>
+#include <sys/shm.h>
 
+#define GPIO18 18
 #define GPIO19 19
 #define GPIO20 20
 #define GPIO21 21
@@ -25,6 +29,7 @@ using namespace std;
 
 void setPair(int* pair, int fileNum);
 int buttonSensing();
+void toggleGameMode(int state);
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList);
 void playComingOut(int index);
 void resetResource();
@@ -45,6 +50,11 @@ enum state {
 };
 
 enum state gameState = loadText;
+
+/* 点滅プロセス管理用 */
+pid_t PID;
+int status, segid;
+int *segaddr;
 
 void setPair(int* pair, int fileNum){
   int place;
@@ -77,7 +87,8 @@ int main(void){
   pinMode(GPIO20,OUTPUT);
   pinMode(GPIO21,OUTPUT);
   pinMode(GPIO22,OUTPUT);
-  
+
+  pinMode(GPIO18,INPUT);
   pinMode(GPIO23,INPUT);
   pinMode(GPIO24,INPUT);
   pinMode(GPIO25,INPUT);
@@ -135,6 +146,15 @@ int buttonSensing(){
   }
 }
 
+void toggleGameMode(int state){
+  // state: 0->file waiting, 1->game mode
+  int input = 0;
+  while(true){
+    input = digitalRead(GPIO18);
+    if(input) return;
+  }
+}
+
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList){
   // 実際にはwavfileListを参照して再生するwavファイルを選択すること
   int index = keys[choosing] * 2;
@@ -166,7 +186,7 @@ int translateTextToWav(vector<string> &wavfileList){
   struct dirent *dp;
   string txtpath = "/home/xiao/pelmani/txt_data/";
   string wavpath = "/home/xiao/pelmani/wav_data/";
-  map<string, int> nameList; //名前衝突判定
+  multimap<string, int> nameList; //名前衝突判定
   int tmp;
   int fileNum = 0;
   
@@ -196,11 +216,11 @@ int translateTextToWav(vector<string> &wavfileList){
       name = name + "さん";
       neta = "の カミングアウト    " + neta;
       
-      nameList.insert(make_pair(name,fileNum));
+      nameList.emplace(name,fileNum);
       
       // 同じ人のネタが出たら序数を振る
       tmp = nameList.count(name);
-      if(tmp > 1) name = name + to_string(tmp);
+      if(tmp > 1) name = name + " " +to_string(tmp);
       
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent);
@@ -249,12 +269,9 @@ void onLoadText(){
   resetResource();
   // 音声「スマートフォンから投稿してください」
   system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset2.wav");
-  while(true){
-    // ここでネタデータを受け付ける
-    
-    // ボタン数の半分ネタデータを受け付けるか、スタートボタンが押されたらbreak
-    break;
-  }
+  
+  // ここでネタデータを受け付ける
+  toggleGameMode(0);
   
   //テスト用プリセット
   string txtpath = "/home/xiao/pelmani/txt_data/";
@@ -262,12 +279,12 @@ void onLoadText(){
   string first = txtpath + "first.txt";
   
   ofstream nm(first.c_str());
-  nm << "おさか: タイキック" << endl;
+  nm << "おさか:デバッグちゅう" << endl;
   nm.close();
   
   string second = txtpath + "second.txt";
   ofstream nt(second.c_str());
-  nt << "シャオ: むのう" << endl;
+  nt << "おさか:眠い" << endl;
   nt.close();
   
   //プリセットここまで
@@ -310,7 +327,7 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     rnd2 = rand() % 10;
     name_asset_path = "/home/xiao/pelmani/name_asset/asset";
     neta_asset_path = "/home/xiao/pelmani/neta_asset/asset";
-    for(int i = 0; i < 7 - fileNum; i++){
+    for(int i = 0; i < BUTTON_NUM/2 - 1 - fileNum; i++){
       rnd_name = name_asset_path + to_string(rnd1)+".wav";
       rnd_neta = name_asset_path + to_string(rnd2)+".wav";
       wavfileList.push_back(rnd_name);
@@ -356,13 +373,57 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   if(keys[choosing] == -1) {
     blockGotten[choosing] = 1;
     // ドボン！
+    digitalWrite(choosing+19, 0);
     system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
-    playReactSound(choosing,keys,wavfileList);
-    // 1手目が打たれたら2手目の待機に移動
-    gameState = waitSecondStep;
+    // ボタンの点滅と次の手の待機は別プロセスで行う。
+    // 共有メモリセグメント作成
+    if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
+      perror( "shmget error." );
+      exit( EXIT_FAILURE );
+    }
+    
+    PID = fork();
+    
+    if(PID < 0){
+      std::cout << "Fork Failed." << std::endl;
+      exit(1);
+    } else if (PID == 0){
+      // ボタンの点滅(子プロセス)
+      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+	perror( "ChildProcess shmat error." );
+	exit(EXIT_FAILURE);
+      }
+      *segaddr = 0;
+      //共有メモリのdetach
+      if (shmdt(segaddr) == -1) {
+	perror( "ChildProcess shmdt error." );
+	exit(EXIT_FAILURE);
+      }
+      while(true){
+        digitalWrite(choosing+19, 0);
+        delay(500);
+        digitalWrite(choosing+19, 1);
+        delay(500);
+	if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+	  perror( "ChildProcess shmat error." );
+	  exit(EXIT_FAILURE);
+	}
+	if(*segaddr == 1) break;
+	//共有メモリのdetach
+	if (shmdt(segaddr) == -1) {
+	  perror( "ChildProcess shmdt error." );
+	  exit(EXIT_FAILURE);	  
+	}
+      }
+      exit(EXIT_SUCCESS);
+      } else {
+      playReactSound(choosing,keys,wavfileList);
+      // 1手目が打たれたら2手目の待機に移動(親プロセス)
+      gameState = waitSecondStep;
+    }
   }
   return;
 }
@@ -374,8 +435,31 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     choosing = buttonSensing();
     if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
+      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+        perror( "ParentProcess shmat error." );
+        exit(EXIT_FAILURE);
+      }
+      *segaddr = 1;
+      //共有メモリのdetach
+      if (shmdt(segaddr) == -1) {
+        perror( "ParentProcess shmdt error." );
+        exit(EXIT_FAILURE);
+      }
       break;
     }
+  }
+  waitpid(PID,&status,0);
+  if (WIFEXITED(status)){
+    printf("exit, status=%d\n", WEXITSTATUS(status));
+  } else if (WIFSIGNALED(status)){
+    printf("signal, sig=%d\n", WTERMSIG(status));
+  } else {
+    printf("abnormal exit\n");
+  }
+  /* 共有メモリを破棄 */
+  if (shmctl(segid, IPC_RMID, NULL) == -1){
+    perror("ParentProcess shmctl error.");
+    exit(EXIT_FAILURE);
   }
   for(int i = 0; i < 4; i++){
     //1手目の箇所を探査
@@ -423,9 +507,8 @@ void onGameEnd() {
   // ゲームをリスタートするならゲーム開始状態へ移行
   // 音声「ゲームを終了します」
   system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset3.wav");
-  while(true){
-    // 実際はスライダーによるtxt受付へのモードチェンジを待つ
-    if(buttonSensing()) break;
-  }
+  // 実際はスライダーによるtxt受付へのモードチェンジを待つ
+  toggleGameMode(1);
+
   gameState = loadText;
 }
