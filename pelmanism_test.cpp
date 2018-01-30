@@ -274,7 +274,7 @@ void onLoadText(){
   toggleGameMode(0);
   
   //テスト用プリセット
-  string txtpath = "/home/xiao/pelmani/txt_data/";
+  /* string txtpath = "/home/xiao/pelmani/txt_data/";
   
   string first = txtpath + "first.txt";
   
@@ -286,7 +286,7 @@ void onLoadText(){
   ofstream nt(second.c_str());
   nt << "おさか:眠い" << endl;
   nt.close();
-  
+  */
   //プリセットここまで
   
   gameState = gameStart;
