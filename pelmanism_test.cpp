@@ -93,6 +93,10 @@ int main(void){
   pinMode(GPIO24,INPUT);
   pinMode(GPIO25,INPUT);
   pinMode(GPIO26,INPUT);
+  
+  /* ioエキスパンダの初期設定
+  init_io_expander();
+  */
 
   while(true) {
     switch(gameState) {
@@ -144,10 +148,19 @@ int buttonSensing(){
     if(status[2]) return 2;
     if(status[3]) return 3;
   }
+  /* ioエキスパンダ導入時
+  int sensed = 0;
+  while(true){
+    if(read_switch(sensed)) break;
+    sensed = (sensed + 1) % BUTTON_NUM;
+  }
+  return sensed;
+  */
 }
 
 void toggleGameMode(int state){
   // state: 0->file waiting, 1->game mode
+  // スライダースイッチの仕様確認のこと
   int input = 0;
   while(true){
     input = digitalRead(GPIO18);
@@ -258,10 +271,19 @@ int translateTextToWav(vector<string> &wavfileList){
 
 
 int judgeGameEnd(int *blockGotten){
+  int count = 0;
   for(int i = 0; i < BUTTON_NUM; i++){
-    if(blockGotten[i]!=1) return 0;
+    if(blockGotten[i]!=1){
+      if(keys[i] != -1){
+        count++;
+      }
+    }
   }
-  return 1;
+  if (count == 2) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 // ネタデータ受付時の処理
@@ -345,6 +367,11 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
       digitalWrite(GPIO20, rand()%2);
       digitalWrite(GPIO21, rand()%2);
       digitalWrite(GPIO22, rand()%2);
+      /* ioエキスパンダ
+      for(int i = 0; i < BUTTON_NUM; i++){
+        write_led(i, rand()%2);
+      }
+      */
       timer--;
       delay(300);
     }
@@ -352,6 +379,13 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     digitalWrite(GPIO20, 1);
     digitalWrite(GPIO21, 1);
     digitalWrite(GPIO22, 1);
+    
+    /* ioエキスパンダ
+      for(int i = 0; i < BUTTON_NUM; i++){
+        write_led(i, 1);
+      }
+      */
+    
     // 音声「ゲームを開始します」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset1.wav");
   
@@ -374,6 +408,9 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     blockGotten[choosing] = 1;
     // ドボン！
     digitalWrite(choosing+19, 0);
+    /* ioエキスパンダ
+    write_led(choosing, 0);
+    */
     system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
@@ -407,6 +444,12 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         delay(500);
         digitalWrite(choosing+19, 1);
         delay(500);
+        /* ioエキスパンダ版
+        write_led(choosing, 0);
+        delay(500);
+        write_led(choosing, 1);
+        delay(500)
+        */
 	if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
 	  perror( "ChildProcess shmat error." );
 	  exit(EXIT_FAILURE);
@@ -477,6 +520,10 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 	blockGotten[i] = 1;
         digitalWrite(i + 19, 0);
         digitalWrite(choosing + 19, 0);
+        /* ioエキスパンダ 
+        write_led(i, 0);
+        write_led(choosing, 0);
+        */
         playReactSound(choosing,keys,wavfileList);
 	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
         playReactSound(choosing,keys,wavfileList);
