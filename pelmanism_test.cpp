@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/shm.h>
+#include "spi_api.h"
 
 #define GPIO8 8
 #define GPIO9 9
@@ -39,7 +40,7 @@ void playReactSound(int choosing, int* keys, vector<string> &wavfileList);
 void playComingOut(int index);
 void resetResource();
 int translateTextToWav(vector<string> &wavfileList);
-int judgeGameEnd(int* blockGotten);
+int judgeGameEnd(int* blockGotten, int* keys);
 void onLoadText();
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList);
 void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList);
@@ -69,11 +70,11 @@ void setPair(int* pair, int fileNum){
     for(int j = 0 ; j < 2 ; j++){
       place = rand() % BUTTON_NUM;
       while(true){
-      	if(pair[place] == -1) {
-	  pair[place] = i;
-	  break;
-	}
-	place = (place + 1) % BUTTON_NUM;
+        if(pair[place] == -1) {
+          pair[place] = i;
+          break;
+        }
+        place = (place + 1) % BUTTON_NUM;
       }
     }
   }
@@ -85,21 +86,21 @@ int main(void){
   int blockGotten[BUTTON_NUM] = {0,0,0,0};
   int keys[BUTTON_NUM] = {-1,-1,-1,-1};
   vector<string> wavfileList;
-  
+
   if(wiringPiSetupGpio() == -1) return 1;
 
   /*  
-  pinMode(GPIO19,OUTPUT);
-  pinMode(GPIO20,OUTPUT);
-  pinMode(GPIO21,OUTPUT);
-  pinMode(GPIO22,OUTPUT);
+      pinMode(GPIO19,OUTPUT);
+      pinMode(GPIO20,OUTPUT);
+      pinMode(GPIO21,OUTPUT);
+      pinMode(GPIO22,OUTPUT);
 
-  pinMode(GPIO18,INPUT);
-  pinMode(GPIO23,INPUT);
-  pinMode(GPIO24,INPUT);
-  pinMode(GPIO25,INPUT);
-  pinMode(GPIO26,INPUT);
-  */
+      pinMode(GPIO18,INPUT);
+      pinMode(GPIO23,INPUT);
+      pinMode(GPIO24,INPUT);
+      pinMode(GPIO25,INPUT);
+      pinMode(GPIO26,INPUT);
+   */
   /* ioエキスパンダの初期設定*/
   pinMode(GPIO8,INPUT);
   pinMode(GPIO9,OUTPUT); 
@@ -107,8 +108,8 @@ int main(void){
   pinMode(GPIO11,INPUT);
   pinMode(GPIO16, INPUT);
   pinMode(GPIO18, INPUT);
-  init_io_expander();
   
+  if(init_io_expander() == -1) return 1;
 
   while(true) {
     switch(gameState) {
@@ -117,30 +118,30 @@ int main(void){
         // 各自の端末からのtextファイルを受け取る
         onLoadText();
         // 上記関数は内部がまだ未定義. 仕様固まり次第って感じで
-        
-      // ゲーム開始
+
+        // ゲーム開始
       case gameStart:
         onGameStart(blockGotten, keys, wavfileList);
         break;
 
-      // 各ターンの1手目
-    case waitFirstStep:
-      onFirstStep(blockGotten, keys, wavfileList);
-      break;
+        // 各ターンの1手目
+      case waitFirstStep:
+        onFirstStep(blockGotten, keys, wavfileList);
+        break;
 
-      // 各ターンの2手目
-    case waitSecondStep:
-      onSecondStep(blockGotten, keys, wavfileList);
-      break;
+        // 各ターンの2手目
+      case waitSecondStep:
+        onSecondStep(blockGotten, keys, wavfileList);
+        break;
 
-      // ゲーム終了
-    case gameEnd:
-      onGameEnd();
-      break;
+        // ゲーム終了
+      case gameEnd:
+        onGameEnd();
+        break;
 
-      // デフォルト
-    default:
-      break;
+        // デフォルト
+      default:
+        break;
     }
   }
 
@@ -149,18 +150,18 @@ int main(void){
 
 int buttonSensing(){
   /*
-  int status[BUTTON_NUM];
-  while(true){
-    status[0] = digitalRead(GPIO23);
-    status[1] = digitalRead(GPIO24);
-    status[2] = digitalRead(GPIO25);
-    status[3] = digitalRead(GPIO26);
-    if(status[0]) return 0;
-    if(status[1]) return 1;
-    if(status[2]) return 2;
-    if(status[3]) return 3;
-  }
-  */
+     int status[BUTTON_NUM];
+     while(true){
+     status[0] = digitalRead(GPIO23);
+     status[1] = digitalRead(GPIO24);
+     status[2] = digitalRead(GPIO25);
+     status[3] = digitalRead(GPIO26);
+     if(status[0]) return 0;
+     if(status[1]) return 1;
+     if(status[2]) return 2;
+     if(status[3]) return 3;
+     }
+   */
   /* ioエキスパンダ導入時*/
   int sensed = 0;
   while(true){
@@ -197,10 +198,10 @@ void playComingOut(int index, vector<string> &wavfileList){
 
 void resetResource(){
   // ゲーム切り替わり時に、テキストデータ・音声データを全て消す
-  
+
   // txt_data下には、送信されてきたネタテキスト及び名前とネタをスプリットしたテキストを保存する
   system("sudo rm /home/xiao/pelmani/txt_data/*.txt");
-  
+
   // wav_data下には、名前、ネタをwav化したファイルを保存する
   system("sudo rm /home/xiao/pelmani/wav_data/*.wav");
 }
@@ -214,7 +215,7 @@ int translateTextToWav(vector<string> &wavfileList){
   multimap<string, int> nameList; //名前衝突判定
   int tmp;
   int fileNum = 0;
-  
+
   dir = opendir(txtpath.c_str());
   // for(全てのネタtxtファイルを走査しきるまで)
   for(dp = readdir(dir) ; dp != NULL ; dp = readdir(dir)){
@@ -236,41 +237,41 @@ int translateTextToWav(vector<string> &wavfileList){
       string buf, name, neta;
       if(getline(ss, buf, ':')){name = buf;}
       if(getline(ss, buf, ':')){neta = buf;}
-  
+
       // 2, 分けた文字列を加工して、それぞれ別のファイルとしてpelmani/txt_data下に保存
       name = name + "さん";
       neta = "の カミングアウト    " + neta;
-      
+
       nameList.emplace(name,fileNum);
-      
+
       // 同じ人のネタが出たら序数を振る
       tmp = nameList.count(name);
       if(tmp > 1) name = name + " " +to_string(tmp);
-      
+
       int extent = filename.find_last_of(".");
       string original = filename.substr(0, extent);
       string name_txtfile = txtpath + original + "_name.txt"; //名前を格納するtxtファイル名
       string neta_txtfile = txtpath + original + "_neta.txt"; //ネタを格納するtxtファイル名
-  
+
       ofstream nm(name_txtfile.c_str());
       nm << name << endl;
       nm.close();
       ofstream nt(neta_txtfile.c_str());
       nt << neta << endl;
       nt.close();
-      
+
       // 3, 保存した時のファイル名を元にファイルパスを指定し、名前の部分とネタの部分をwav化し、pelmani/wav_data下に保存
       string name_wavfile = wavpath + original + "_name.wav"; //名前を格納するwavファイル名
       string neta_wavfile = wavpath + original + "_neta.wav"; //ネタを格納するwavファイル名
-      
+
       string jtalk_command = "open_jtalk -m /usr/share/hts-voice/nitech-jp-atr503-m001/mei/mei_normal.htsvoice -x /var/lib/mecab/dic/open-jtalk/naist-jdic -ow ";
-      
+
       string name_command = jtalk_command + name_wavfile + " " + name_txtfile;
       string neta_command = jtalk_command + neta_wavfile + " " + neta_txtfile;
-      
+
       system(name_command.c_str());
       system(neta_command.c_str());
-      
+
       // 4, wavfileListに保存したwavのファイルパスを追加する  
       wavfileList.push_back(name_wavfile);
       wavfileList.push_back(neta_wavfile);
@@ -282,7 +283,7 @@ int translateTextToWav(vector<string> &wavfileList){
 }
 
 
-int judgeGameEnd(int *blockGotten){
+int judgeGameEnd(int *blockGotten, int *keys){
   int count = 0;
   for(int i = 0; i < BUTTON_NUM; i++){
     if(blockGotten[i]!=1){
@@ -303,26 +304,26 @@ void onLoadText(){
   resetResource();
   // 音声「スマートフォンから投稿してください」
   system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset2.wav");
-  
+
   // ここでネタデータを受け付ける
   toggleGameMode(0);
-  
+
   //テスト用プリセット
   /* string txtpath = "/home/xiao/pelmani/txt_data/";
-  
-  string first = txtpath + "first.txt";
-  
-  ofstream nm(first.c_str());
-  nm << "おさか:デバッグちゅう" << endl;
-  nm.close();
-  
-  string second = txtpath + "second.txt";
-  ofstream nt(second.c_str());
-  nt << "おさか:眠い" << endl;
-  nt.close();
-  */
+
+     string first = txtpath + "first.txt";
+
+     ofstream nm(first.c_str());
+     nm << "おさか:デバッグちゅう" << endl;
+     nm.close();
+
+     string second = txtpath + "second.txt";
+     ofstream nt(second.c_str());
+     nt << "おさか:眠い" << endl;
+     nt.close();
+   */
   //プリセットここまで
-  
+
   gameState = gameStart;
 }
 
@@ -330,21 +331,21 @@ void onLoadText(){
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
   int fileNum, rnd1, rnd2;
   string name_asset_path, neta_asset_path, rnd_name, rnd_neta;
-  
+
   // マス取得状態とマスに割り当てられているkeyの初期化
   for(int i = 0; i < BUTTON_NUM; i++){
     blockGotten[i] = 0;
     keys[i] = -1;
   }
   wavfileList.clear();
-  
+
   // wavfileListをすでに参照で受け取っているのでこの関数呼び出しは不正になるかも. コンパイルエラー時注意.
   fileNum = translateTextToWav(wavfileList);
-  
+
   /* ファイル数に応じた処理 */
-  
+
   // 0~1
-    // 強制終了
+  // 強制終了
   if (fileNum < 2){
     // ゲームできないお知らせ音声
     gameState = gameEnd;
@@ -352,11 +353,11 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
   } else {
     srand((unsigned)time(NULL));
     // 2~3
-      // wavfileListにただの音、パーティーゲームならではの命令を7組まで埋める
+    // wavfileListにただの音、パーティーゲームならではの命令を7組まで埋める
     // 4~7
-      // wavfileListにただの音を7組分になるように入れる
+    // wavfileListにただの音を7組分になるように入れる
     // 8~
-      // 特に変更箇所はなし
+    // 特に変更箇所はなし
     rnd1 = rand() % 10;
     rnd2 = rand() % 10;
     name_asset_path = "/home/xiao/pelmani/name_asset/asset";
@@ -369,18 +370,18 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
       rnd1 = (rnd1 + 3) % 10;
       rnd1 = (rnd2 + 7) % 10;
     }
-  
+
     // setPairはドボンマスの考慮を入れる
     setPair(keys, fileNum);
-    
+
     int timer = 5;
     while(timer){
       /*
-      digitalWrite(GPIO19, rand()%2);
-      digitalWrite(GPIO20, rand()%2);
-      digitalWrite(GPIO21, rand()%2);
-      digitalWrite(GPIO22, rand()%2);
-      */
+         digitalWrite(GPIO19, rand()%2);
+         digitalWrite(GPIO20, rand()%2);
+         digitalWrite(GPIO21, rand()%2);
+         digitalWrite(GPIO22, rand()%2);
+       */
       /* ioエキスパンダ*/
       for(int i = 0; i < BUTTON_NUM; i++){
         write_led(i, rand()%2);
@@ -389,19 +390,19 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
       delay(300);
     }
     /*
-    digitalWrite(GPIO19, 1);
-    digitalWrite(GPIO20, 1);
-    digitalWrite(GPIO21, 1);
-    digitalWrite(GPIO22, 1);
-    */
+       digitalWrite(GPIO19, 1);
+       digitalWrite(GPIO20, 1);
+       digitalWrite(GPIO21, 1);
+       digitalWrite(GPIO22, 1);
+     */
     /* ioエキスパンダ */
-      for(int i = 0; i < BUTTON_NUM; i++){
-        write_led(i, 1);
-      }
-    
+    for(int i = 0; i < BUTTON_NUM; i++){
+      write_led(i, 1);
+    }
+
     // 音声「ゲームを開始します」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset1.wav");
-  
+
     gameState = waitFirstStep;
   }
 }
@@ -433,50 +434,50 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       perror( "shmget error." );
       exit( EXIT_FAILURE );
     }
-    
+
     PID = fork();
-    
+
     if(PID < 0){
       std::cout << "Fork Failed." << std::endl;
       exit(1);
     } else if (PID == 0){
       // ボタンの点滅(子プロセス)
       if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
-	perror( "ChildProcess shmat error." );
-	exit(EXIT_FAILURE);
+        perror( "ChildProcess shmat error." );
+        exit(EXIT_FAILURE);
       }
       *segaddr = 0;
       //共有メモリのdetach
       if (shmdt(segaddr) == -1) {
-	perror( "ChildProcess shmdt error." );
-	exit(EXIT_FAILURE);
+        perror( "ChildProcess shmdt error." );
+        exit(EXIT_FAILURE);
       }
       while(true){
-	/*
-        digitalWrite(choosing+19, 0);
-        delay(500);
-        digitalWrite(choosing+19, 1);
-        delay(500);
-	*/
+        /*
+           digitalWrite(choosing+19, 0);
+           delay(500);
+           digitalWrite(choosing+19, 1);
+           delay(500);
+         */
         /* ioエキスパンダ版*/
         write_led(choosing, 0);
         delay(500);
         write_led(choosing, 1);
-        delay(500)
-        
-	if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
-	  perror( "ChildProcess shmat error." );
-	  exit(EXIT_FAILURE);
-	}
-	if(*segaddr == 1) break;
-	//共有メモリのdetach
-	if (shmdt(segaddr) == -1) {
-	  perror( "ChildProcess shmdt error." );
-	  exit(EXIT_FAILURE);	  
-	}
+        delay(500);
+
+        if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+          perror( "ChildProcess shmat error." );
+          exit(EXIT_FAILURE);
+        }
+        if(*segaddr == 1) break;
+        //共有メモリのdetach
+        if (shmdt(segaddr) == -1) {
+          perror( "ChildProcess shmdt error." );
+          exit(EXIT_FAILURE);	  
+        }
       }
       exit(EXIT_SUCCESS);
-      } else {
+    } else {
       playReactSound(choosing,keys,wavfileList);
       // 1手目が打たれたら2手目の待機に移動(親プロセス)
       gameState = waitSecondStep;
@@ -484,7 +485,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   }
   return;
 }
- 
+
 // 各ターンの2手目が打たれるのを待っているときの処理
 void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   int choosing = -1;
@@ -524,38 +525,38 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     if(blockGotten[i] == 2){
       if(keys[choosing] == -1){ // ドボンマスにヒット
         blockGotten[choosing] = 1;
-	blockGotten[i] = 0;
-	write_led(choosing, 0);
-	// ドボン！
+        blockGotten[i] = 0;
+        write_led(choosing, 0);
+        // ドボン！
         system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
-	blockGotten[choosing] = 1;
-	blockGotten[i] = 1;
-	/*
-        digitalWrite(i + 19, 0);
-        digitalWrite(choosing + 19, 0);
-        */
-	/* ioエキスパンダ */
+        blockGotten[choosing] = 1;
+        blockGotten[i] = 1;
+        /*
+           digitalWrite(i + 19, 0);
+           digitalWrite(choosing + 19, 0);
+         */
+        /* ioエキスパンダ */
         write_led(i, 0);
         write_led(choosing, 0);
         playReactSound(choosing,keys,wavfileList);
-	system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
+        system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
         playReactSound(choosing,keys,wavfileList);
         playComingOut((keys[choosing] * 2 + 1), wavfileList);
       } else { //ペアになってない
-	blockGotten[choosing] = 0;
-	blockGotten[i] = 0;
+        blockGotten[choosing] = 0;
+        blockGotten[i] = 0;
         playReactSound(choosing,keys,wavfileList);
-	system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
+        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       }
     }
   }
 
-  if(judgeGameEnd(blockGotten)){    
+  if(judgeGameEnd(blockGotten, keys)){    
     // ゲームが終了するならゲーム終了状態へ移行
     system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
     gameState = gameEnd;
