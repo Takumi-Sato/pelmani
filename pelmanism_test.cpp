@@ -271,10 +271,19 @@ int translateTextToWav(vector<string> &wavfileList){
 
 
 int judgeGameEnd(int *blockGotten){
+  int count = 0;
   for(int i = 0; i < BUTTON_NUM; i++){
-    if(blockGotten[i]!=1) return 0;
+    if(blockGotten[i]!=1){
+      if(keys[i] != -1){
+        count++;
+      }
+    }
   }
-  return 1;
+  if (count == 2) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 // ネタデータ受付時の処理
