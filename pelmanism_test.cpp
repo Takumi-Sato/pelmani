@@ -62,6 +62,8 @@ pid_t PID;
 int status, segid;
 int *segaddr;
 
+int NETA_NUM;
+
 void setPair(int* pair, int fileNum){
   int place;
   srand((unsigned)time(NULL));
@@ -286,9 +288,11 @@ int translateTextToWav(vector<string> &wavfileList){
 int judgeGameEnd(int *blockGotten, int *keys){
   int count = 0;
   for(int i = 0; i < BUTTON_NUM; i++){
-    if(blockGotten[i]!=1){
-      if(keys[i] != -1){
-        count++;
+    for(int j = 0 ; j < NETA_NUM; j++){
+      if(blockGotten[i]!=1){
+        if(keys[i] == j){
+          count++;
+        }
       }
     }
   }
@@ -297,6 +301,7 @@ int judgeGameEnd(int *blockGotten, int *keys){
   } else {
     return 0;
   }
+  // 1: end  0: continue;
 }
 
 // ネタデータ受付時の処理
@@ -341,7 +346,8 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
 
   // wavfileListをすでに参照で受け取っているのでこの関数呼び出しは不正になるかも. コンパイルエラー時注意.
   fileNum = translateTextToWav(wavfileList);
-
+  NETA_NUM = fileNum;
+  
   /* ファイル数に応じた処理 */
 
   // 0~1
