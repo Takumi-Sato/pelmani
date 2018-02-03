@@ -84,7 +84,6 @@ void setPair(int* pair, int fileNum){
 }
 
 int main(void){
-  int status;
   int blockGotten[BUTTON_NUM] = {0,0,0,0};
   int keys[BUTTON_NUM] = {-1,-1,-1,-1};
   vector<string> wavfileList;
