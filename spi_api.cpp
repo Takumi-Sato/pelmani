@@ -69,6 +69,11 @@ int init_io_expander()
   write2spi(DEVICE_3, IODIRB, 0xff);
   write2spi(DEVICE_3, GPIOA, 0x00);
 
+  write2spi(DEVICE_0, GPIOA, 0xff);
+  write2spi(DEVICE_1, GPIOA, 0xff);
+  delay(1000);
+  write2spi(DEVICE_0, GPIOA, 0x00);
+  write2spi(DEVICE_1, GPIOA, 0x00);
   return 0;
 }
 

@@ -103,11 +103,14 @@ int main(void){
       pinMode(GPIO26,INPUT);
    */
   /* ioエキスパンダの初期設定*/
-  pinMode(GPIO8,INPUT);
-  pinMode(GPIO9,OUTPUT); 
-  pinMode(GPIO10,INPUT);
-  pinMode(GPIO11,INPUT);
-  pinMode(GPIO16, INPUT);
+
+  pinMode(GPIO8, OUTPUT);
+  /*
+  pinMode(GPIO9, INPUT); 
+  pinMode(GPIO10, OUTPUT);
+  pinMode(GPIO11, OUTPUT);
+  */
+  pinMode(GPIO16, OUTPUT);
   pinMode(GPIO18, INPUT);
   
   if(init_io_expander() == -1) return 1;
@@ -335,6 +338,8 @@ void onLoadText(){
 void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
   int fileNum, rnd1, rnd2;
   string name_asset_path, neta_asset_path, rnd_name, rnd_neta;
+
+  init_io_expander();
 
   // マス取得状態とマスに割り当てられているkeyの初期化
   for(int i = 0; i < BUTTON_NUM; i++){
