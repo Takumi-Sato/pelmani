@@ -4,7 +4,9 @@ int main() {
   init_io_expander();
 
   for(int i=0; i<16; ++i) {
+    getchar();
     write_led(i, 1);
+    printf("%d th button\n", i);
   }
 
   return 0;
