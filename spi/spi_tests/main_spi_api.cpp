@@ -1,5 +1,15 @@
 #include "spi_api.h"
 
+int main() {
+  init_io_expander();
+
+  for(int i=0; i<16; ++i) {
+    write_led(i, 1);
+  }
+
+  return 0;
+}
+
 void write2spi(unsigned char device, unsigned char regaddr, unsigned char tx_data)
 {
   unsigned char buf[3];
@@ -45,6 +55,7 @@ int init_io_expander()
   digitalWrite(DEVICE_RESET_PORT, 0);
   delay(100);
   digitalWrite(DEVICE_RESET_PORT, 1);
+  delay(100);
 
   pinMode(SS_PORT, OUTPUT);
   digitalWrite(SS_PORT, 1);

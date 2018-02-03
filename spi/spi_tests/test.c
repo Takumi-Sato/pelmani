@@ -31,6 +31,12 @@ int main(void)
   pinMode(SS_PORT, OUTPUT);
   digitalWrite(SS_PORT, 1);
 
+  pinMode(16, OUTPUT);
+  digitalWrite(16, 0);
+  delay(100);
+  digitalWrite(16, 1);
+  delay(100);
+
   write2spi(DEVICE_ADDR, IOCON, 0x08);
   write2spi(DEVICE_0, IODIRA, 0x00);
   write2spi(DEVICE_1, IODIRB, 0x00);
