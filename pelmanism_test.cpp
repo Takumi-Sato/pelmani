@@ -165,9 +165,9 @@ int buttonSensing(){
      }
    */
   /* ioエキスパンダ導入時*/
-  int sensed = 0;
+  int sensed = 0; //本来は0
   while(true){
-    if(read_switch(sensed)) break;
+    if(read_switch(sensed+2)) break;
     sensed = (sensed + 1) % BUTTON_NUM;
   }
   return sensed;
@@ -390,7 +390,7 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
        */
       /* ioエキスパンダ*/
       for(int i = 0; i < BUTTON_NUM; i++){
-        write_led(i, rand()%2);
+        write_led(i+2, rand()%2);
       }
       timer--;
       delay(300);
@@ -403,7 +403,7 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
      */
     /* ioエキスパンダ */
     for(int i = 0; i < BUTTON_NUM; i++){
-      write_led(i, 1);
+      write_led(i+2, 1);
     }
 
     // 音声「ゲームを開始します」
@@ -429,7 +429,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     // ドボン！
     /* digitalWrite(choosing+19, 0);*/
     /* ioエキスパンダ*/
-    write_led(choosing, 0);
+    write_led(choosing+2, 0);
     system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
@@ -466,9 +466,9 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
            delay(500);
          */
         /* ioエキスパンダ版*/
-        write_led(choosing, 0);
+        write_led(choosing+2, 0);
         delay(500);
-        write_led(choosing, 1);
+        write_led(choosing+2, 1);
         delay(500);
 
         if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
@@ -532,7 +532,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       if(keys[choosing] == -1){ // ドボンマスにヒット
         blockGotten[choosing] = 1;
         blockGotten[i] = 0;
-        write_led(choosing, 0);
+        write_led(choosing+2, 0);
         // ドボン！
         system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
         // 音声「次の人に交代してください」
@@ -545,8 +545,8 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
            digitalWrite(choosing + 19, 0);
          */
         /* ioエキスパンダ */
-        write_led(i, 0);
-        write_led(choosing, 0);
+        write_led(i+2, 0);
+        write_led(choosing+2, 0);
         playReactSound(choosing,keys,wavfileList);
         system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
         playReactSound(choosing,keys,wavfileList);
