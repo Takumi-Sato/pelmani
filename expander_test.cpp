@@ -18,13 +18,13 @@ int main() {
   }
 */
 
-/* input
+///* input
   for(int i=0; i<4; ++i) {
     getchar();
     int res = read_switch(i%4 + 2);
     printf("%d th button is %d\n", i%4 + 2, res);
   }
-*/
+//*/
   while(1) {
     getchar();
     int res = read_switch(2);
