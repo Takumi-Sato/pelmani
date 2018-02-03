@@ -107,9 +107,10 @@ int read_switch(int button_num)
   read_from_spi(device, GPIOB, buf);
   printf("result:0x%x\n", buf[2]);
 
+  // value は input_pullup なのでスイッチが押されていると L, 押されていないと H になる
   unsigned char value = buf[2] & bit_position;
-  if(value != 0) return 1;
-  return 0; 
+  if(value != 0) return 0;
+  return 1;
 }
 
 // return: ID of I/O Expander which contains the button
