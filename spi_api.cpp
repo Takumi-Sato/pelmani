@@ -76,19 +76,23 @@ void write_led(int button_num, int value)
 {
   unsigned char device = get_device_by_button(button_num);
   int bit_num = get_pin_by_button(button_num, IS_LED);
-  unsigned char write_value = 0x01 << bit_num;
+  unsigned char bit_position = 0x01 << bit_num;
+  printf("bit_num:%d write_value:0x%x\n", bit_num, bit_position);
   unsigned char buf[3];
   read_from_spi(device, GPIOA, buf);
 
+  unsigned char write_value;
   if(value != 0)
   {
-    printf("[WRITE_LED] bit_num:%d, device:0x%x, value:0x%x\n", bit_num, device, write_value | buf[2]);
-    write2spi(device, GPIOA, write_value | buf[2]);
+    write_value = bit_position | buf[2];
+    printf("[WRITE_LED] bit_num:%d, device:0x%x, bit_position:0x%x, write_value:0x%x\n", bit_num, device, bit_position, write_value);
+    write2spi(device, GPIOA, write_value);
   }
   else 
   {
-    printf("[WRITE_LED] bit_num:%d, device:0x%x, value:0x%x\n", bit_num, device, ~write_value & buf[2]);
-    write2spi(device ,GPIOA, ~write_value & buf[2]);
+    write_value = ~bit_position & buf[2]; 
+    printf("[WRITE_LED] bit_num:%d, device:0x%x, bit_position:0x%x, write_value:0x%x\n", bit_num, device, bit_position, write_value);
+    write2spi(device ,GPIOA, write_value);
   }
 }
 
@@ -96,12 +100,15 @@ int read_switch(int button_num)
 {
   unsigned char device = get_device_by_button(button_num);
   int bit_num = get_pin_by_button(button_num, IS_SWITCH);
-  unsigned char cond = 0x01 << bit_num;
+  unsigned char bit_position = 0x01 << bit_num;
+  printf("[READ_SWITCH] bit_num:%d, device:0x%x, bit_position:0x%x ", bit_num, device, bit_position);
 
   unsigned char buf[3];
   read_from_spi(device, GPIOB, buf);
+  printf("result:0x%x\n", buf[2]);
 
-  if(buf[2] & cond != 0) return 1;
+  unsigned char value = buf[2] & bit_position;
+  if(value != 0) return 1;
   return 0; 
 }
 
