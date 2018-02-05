@@ -20,6 +20,7 @@
 #define GPIO10 10
 #define GPIO11 11
 #define GPIO16 16
+#define GPIO17 17
 #define GPIO18 18
 #define GPIO19 19
 #define GPIO20 20
@@ -112,6 +113,7 @@ int main(int argc, char* argv[]){
   pinMode(GPIO11, OUTPUT);
   */
   pinMode(GPIO16, OUTPUT);
+  pinMode(GPIO17, INPUT);
   pinMode(GPIO18, INPUT);
   
   if(init_io_expander() == -1) return 1;
@@ -179,10 +181,25 @@ int buttonSensing(){
 void toggleGameMode(int state){
   // state: 0->file waiting, 1->game mode
   // スライダースイッチの仕様確認のこと
-  int input = 0;
-  while(true){
-    input = digitalRead(GPIO18);
-    if(input) return;
+  int fileWait = (state+1)%2;
+  int gameWait = state;
+  if(state) {
+    while(true){
+      fileWait = digitalRead(GPIO17);
+      gameWait = digitalRead(GPIO18);
+      cout << "GPIO17 = " << fileWait << "  GPIO18 = " << gameWait << endl;
+      getchar();
+      if(gameWait) return;
+    }
+  }
+  else {
+    while(true) {
+      fileWait = digitalRead(GPIO17);
+      gameWait = digitalRead(GPIO18);
+      cout << "ファイル待ちGPIO17 = " << fileWait<< "  GPIO18 = " << gameWait << endl;
+      getchar();
+      if(!gameWait) return;
+    }
   }
 }
 
