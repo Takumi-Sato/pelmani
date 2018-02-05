@@ -42,7 +42,7 @@ void resetResource();
 int translateTextToWav(vector<string> &wavfileList);
 int judgeGameEnd(int* blockGotten, int* keys);
 void onLoadText();
-void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList);
+void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int demoMode);
 void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList);
 void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList);
 void onGameEnd();
@@ -83,9 +83,10 @@ void setPair(int* pair, int fileNum){
   return;
 }
 
-int main(void){
-  int blockGotten[BUTTON_NUM] = {0,0,0,0};
-  int keys[BUTTON_NUM] = {-1,-1,-1,-1};
+int main(int argc, char* argv[]){
+  int blockGotten[BUTTON_NUM];
+  int keys[BUTTON_NUM];
+  int demoMode = (argc == 2) ? 1 : 0;
   vector<string> wavfileList;
 
   if(wiringPiSetupGpio() == -1) return 1;
@@ -125,7 +126,7 @@ int main(void){
 
         // ゲーム開始
       case gameStart:
-        onGameStart(blockGotten, keys, wavfileList);
+        onGameStart(blockGotten, keys, wavfileList, demoMode);
         break;
 
         // 各ターンの1手目
@@ -335,7 +336,7 @@ void onLoadText(){
 }
 
 // ゲーム開始時の処理
-void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
+void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int demoMode){
   int fileNum, rnd1, rnd2;
   string name_asset_path, neta_asset_path, rnd_name, rnd_neta;
 
@@ -381,9 +382,17 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
       rnd1 = (rnd2 + 7) % 10;
     }
 
-    // setPairはドボンマスの考慮を入れる
-    setPair(keys, fileNum);
-
+    // setPairはデモモード、ドボンマスの考慮を入れる
+    if(demoMode){
+      int key_val = 0;
+      for(int i = 0; i < BUTTON_NUM/2 ; i++){
+        keys[i*2] = key_val;
+        keys[i*2+1] = key_val++;
+      }
+    } else {
+      setPair(keys, fileNum);
+    }
+      
     int timer = 5;
     while(timer){
       /*
