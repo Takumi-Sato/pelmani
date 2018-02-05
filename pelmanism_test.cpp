@@ -443,7 +443,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     /* digitalWrite(choosing+19, 0);*/
     /* ioエキスパンダ*/
     write_led(choosing, 0);
-    system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+    system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
@@ -547,7 +547,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         blockGotten[i] = 0;
         write_led(choosing, 0);
         // ドボン！
-        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+        system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
@@ -561,14 +561,14 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         write_led(i, 0);
         write_led(choosing, 0);
         playReactSound(choosing,keys,wavfileList);
-        system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
+        system("sudo aplay /home/xiao/pelmani/react_sound/correct.wav");
         playReactSound(choosing,keys,wavfileList);
         playComingOut((keys[choosing] * 2 + 1), wavfileList);
       } else { //ペアになってない
         blockGotten[choosing] = 0;
         blockGotten[i] = 0;
         playReactSound(choosing,keys,wavfileList);
-        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
+        system("sudo aplay /home/xiao/pelmani/react_sound/incorrect.wav");
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       }
@@ -577,7 +577,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 
   if(judgeGameEnd(blockGotten, keys)){    
     // ゲームが終了するならゲーム終了状態へ移行
-    system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
+    // ゲーム終了時のサウンドあれば　system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
     gameState = gameEnd;
   } else {
     // ゲームが続くなら1手目に戻る
