@@ -20,6 +20,7 @@
 #define GPIO10 10
 #define GPIO11 11
 #define GPIO16 16
+#define GPIO17 17
 #define GPIO18 18
 #define GPIO19 19
 #define GPIO20 20
@@ -112,6 +113,7 @@ int main(int argc, char* argv[]){
   pinMode(GPIO11, OUTPUT);
   */
   pinMode(GPIO16, OUTPUT);
+  pinMode(GPIO17, INPUT);
   pinMode(GPIO18, INPUT);
   
   if(init_io_expander() == -1) return 1;
@@ -179,10 +181,25 @@ int buttonSensing(){
 void toggleGameMode(int state){
   // state: 0->file waiting, 1->game mode
   // スライダースイッチの仕様確認のこと
-  int input = 0;
-  while(true){
-    input = digitalRead(GPIO18);
-    if(input) return;
+  int fileWait = (state+1)%2;
+  int gameWait = state;
+  if(state) {
+    while(true){
+      fileWait = digitalRead(GPIO17);
+      gameWait = digitalRead(GPIO18);
+      cout << "GPIO17 = " << fileWait << "  GPIO18 = " << gameWait << endl;
+      getchar();
+      if(gameWait) return;
+    }
+  }
+  else {
+    while(true) {
+      fileWait = digitalRead(GPIO17);
+      gameWait = digitalRead(GPIO18);
+      cout << "ファイル待ちGPIO17 = " << fileWait<< "  GPIO18 = " << gameWait << endl;
+      getchar();
+      if(!gameWait) return;
+    }
   }
 }
 
@@ -443,7 +460,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     /* digitalWrite(choosing+19, 0);*/
     /* ioエキスパンダ*/
     write_led(choosing, 0);
-    system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+    system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
@@ -547,7 +564,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         blockGotten[i] = 0;
         write_led(choosing, 0);
         // ドボン！
-        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+        system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
@@ -561,14 +578,14 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         write_led(i, 0);
         write_led(choosing, 0);
         playReactSound(choosing,keys,wavfileList);
-        system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
+        system("sudo aplay /home/xiao/pelmani/react_sound/correct.wav");
         playReactSound(choosing,keys,wavfileList);
         playComingOut((keys[choosing] * 2 + 1), wavfileList);
       } else { //ペアになってない
         blockGotten[choosing] = 0;
         blockGotten[i] = 0;
         playReactSound(choosing,keys,wavfileList);
-        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
+        system("sudo aplay /home/xiao/pelmani/react_sound/incorrect.wav");
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       }
@@ -577,7 +594,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 
   if(judgeGameEnd(blockGotten, keys)){    
     // ゲームが終了するならゲーム終了状態へ移行
-    system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
+    // ゲーム終了時のサウンドあれば　system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
     gameState = gameEnd;
   } else {
     // ゲームが続くなら1手目に戻る

@@ -13,8 +13,8 @@
 #define DEVICE_ADDR 0x40
 #define DEVICE_0 0x40
 #define DEVICE_1 0x42
-#define DEVICE_2 0x44
-#define DEVICE_3 0x46
+#define DEVICE_2 0x46
+#define DEVICE_3 0x4e
 #define DEVICE_RESET_PORT 16
 #define IS_LED 1
 #define IS_SWITCH 0

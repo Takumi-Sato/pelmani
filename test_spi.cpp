@@ -10,6 +10,8 @@ int main(void)
     return -1;
   }
 
+  getchar();
+
   for(int i=0; i<16; ++i) {
     write_led(i, 1);
   }
