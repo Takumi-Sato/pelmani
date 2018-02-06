@@ -38,7 +38,7 @@
 #define GPIO24 24
 #define GPIO25 25
 #define GPIO26 26
-#define BUTTON_NUM 4
+#define BUTTON_NUM 8
 
 using namespace std;
 
@@ -110,12 +110,12 @@ int main(int argc, char* argv[]){
   
   pinMode(GPIO14, INPUT);  // SWITCH1
   pinMode(GPIO15, INPUT);  // SWITCH2
-  pinMode(GPIO18, INPUT);  // SWITCH3
-  pinMode(GPIO19, INPUT);  // SWITCH4
-  pinMode(GPIO20, INPUT);  // SWITCH5
-  pinMode(GPIO21, INPUT);  // SWITCH6
-  pinMode(GPIO22, INPUT);  // SWITCH7
-  pinMode(GPIO23, INPUT);  // SWITCH8
+  pinMode(GPIO16, INPUT);  // SWITCH3
+  pinMode(GPIO17, INPUT);  // SWITCH4
+  pinMode(GPIO18, INPUT);  // SWITCH5
+  pinMode(GPIO19, INPUT);  // SWITCH6
+  pinMode(GPIO20, INPUT);  // SWITCH7
+  pinMode(GPIO21, INPUT);  // SWITCH8
 
   pinMode(GPIO26, INPUT);  //ChangeGameModeButton
      
@@ -174,7 +174,6 @@ int buttonSensing(){
   int which = 0;
   while(true){
     if(digitalRead(which + 14)){
-      if(which > 3) which = which - 2;
       return which;
     }
     which = (which + 1) % (BUTTON_NUM+2);
@@ -410,17 +409,17 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int d
     neta_asset_path = "/home/xiao/pelmani/neta_asset/mei_asset";
     for(int i = 0; i < BUTTON_NUM/2 - 1 - fileNum; i++){
       rnd_name = name_asset_path + to_string(rnd1)+".wav";
-      rnd_neta = name_asset_path + to_string(rnd2)+".wav";
+      rnd_neta = neta_asset_path + to_string(rnd2)+".wav";
       wavfileList.push_back(rnd_name);
       wavfileList.push_back(rnd_neta);
       rnd1 = (rnd1 + 3) % 10;
-      rnd1 = (rnd2 + 7) % 10;
+      rnd2 = (rnd2 + 7) % 10;
     }
 
     // setPairはデモモード、ドボンマスの考慮を入れる
     if(demoMode){
       int key_val = 0;
-      for(int i = 0; i < BUTTON_NUM/2 ; i++){
+      for(int i = 0; i < BUTTON_NUM/2 -1; i++){
         keys[i*2] = key_val;
         keys[i*2+1] = key_val;
 	key_val++;
