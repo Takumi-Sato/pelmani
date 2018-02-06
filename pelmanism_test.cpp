@@ -19,6 +19,8 @@
 #define GPIO9 9
 #define GPIO10 10
 #define GPIO11 11
+#define GPIO12 12
+#define GPIO15 15
 #define GPIO16 16
 #define GPIO17 17
 #define GPIO18 18
@@ -112,6 +114,8 @@ int main(int argc, char* argv[]){
   pinMode(GPIO10, OUTPUT);
   pinMode(GPIO11, OUTPUT);
   */
+  pinMode(GPIO12, INPUT);
+  pinMode(GPIO15, INPUT);
   pinMode(GPIO16, OUTPUT);
   pinMode(GPIO17, INPUT);
   pinMode(GPIO18, INPUT);
@@ -185,20 +189,20 @@ void toggleGameMode(int state){
   int gameWait = state;
   if(state) {
     while(true){
-      fileWait = digitalRead(GPIO17);
+      fileWait = digitalRead(GPIO12);
       gameWait = digitalRead(GPIO18);
-      cout << "GPIO17 = " << fileWait << "  GPIO18 = " << gameWait << endl;
+      cout << "GPIO12 = " << fileWait << "  GPIO18 = " << gameWait << endl;
       getchar();
-      if(gameWait) return;
+      if(!fileWait) return;
     }
   }
   else {
     while(true) {
-      fileWait = digitalRead(GPIO17);
+      fileWait = digitalRead(GPIO12);
       gameWait = digitalRead(GPIO18);
-      cout << "ファイル待ちGPIO17 = " << fileWait<< "  GPIO18 = " << gameWait << endl;
+      cout << "ファイル待ちGPIO12 = " << fileWait<< "  GPIO18 = " << gameWait << endl;
       getchar();
-      if(!gameWait) return;
+      if(fileWait) return;
     }
   }
 }
@@ -388,8 +392,8 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int d
     // 特に変更箇所はなし
     rnd1 = rand() % 10;
     rnd2 = rand() % 10;
-    name_asset_path = "/home/xiao/pelmani/name_asset/asset";
-    neta_asset_path = "/home/xiao/pelmani/neta_asset/asset";
+    name_asset_path = "/home/xiao/pelmani/name_asset/mei_asset";
+    neta_asset_path = "/home/xiao/pelmani/neta_asset/mei_asset";
     for(int i = 0; i < BUTTON_NUM/2 - 1 - fileNum; i++){
       rnd_name = name_asset_path + to_string(rnd1)+".wav";
       rnd_neta = name_asset_path + to_string(rnd2)+".wav";
@@ -409,22 +413,26 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int d
     } else {
       setPair(keys, fileNum);
     }
-      
+    /*  
     int timer = 5;
     while(timer){
-      /*
+    */
+    /*
          digitalWrite(GPIO19, rand()%2);
          digitalWrite(GPIO20, rand()%2);
          digitalWrite(GPIO21, rand()%2);
          digitalWrite(GPIO22, rand()%2);
        */
       /* ioエキスパンダ*/
+/*
       for(int i = 0; i < BUTTON_NUM; i++){
         write_led(i, rand()%2);
       }
+
       timer--;
       delay(300);
     }
+*/
     /*
        digitalWrite(GPIO19, 1);
        digitalWrite(GPIO20, 1);
