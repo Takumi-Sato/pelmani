@@ -92,7 +92,7 @@ int main(int argc, char* argv[]){
   int demoMode = (argc == 2) ? 1 : 0;
   vector<string> wavfileList;
 
-  if(wiringPiSetupGpio() == -1) return 1;
+  //if(wiringPiSetupGpio() == -1) return 1;
 
   /*  
       pinMode(GPIO19,OUTPUT);
@@ -108,20 +108,27 @@ int main(int argc, char* argv[]){
    */
   /* ioエキスパンダの初期設定*/
 
-  pinMode(GPIO8, OUTPUT);
+  //pinMode(GPIO8, OUTPUT);
   /*
   pinMode(GPIO9, INPUT); 
   pinMode(GPIO10, OUTPUT);
   pinMode(GPIO11, OUTPUT);
+  
+  pinMode(GPIO12, INPUT);
+  pinMode(GPIO15, INPUT);
+  pinMode(GPIO16, OUTPUT);
+  pinMode(GPIO17, INPUT);
+  pinMode(GPIO18, INPUT);
   */
+  if(init_io_expander() == -1) return 1;
+
+  pinMode(GPIO8, OUTPUT);
   pinMode(GPIO12, INPUT);
   pinMode(GPIO15, INPUT);
   pinMode(GPIO16, OUTPUT);
   pinMode(GPIO17, INPUT);
   pinMode(GPIO18, INPUT);
   
-  if(init_io_expander() == -1) return 1;
-
   while(true) {
     switch(gameState) {
       // ゲームに必要なテキストファイルの読み込み
@@ -176,7 +183,8 @@ int buttonSensing(){
   /* ioエキスパンダ導入時*/
   int sensed = 0; //本来は0
   while(true){
-    if(read_switch(sensed)) break;
+    getchar();
+    if(!read_switch(sensed)) break;
     sensed = (sensed + 1) % BUTTON_NUM;
   }
   return sensed;
@@ -474,7 +482,7 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   } else {
     // ボタンの点滅と次の手の待機は別プロセスで行う。
     // 共有メモリセグメント作成
-    if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
+    /*if ((segid = shmget(IPC_PRIVATE, 100, 0600)) == -1){
       perror( "shmget error." );
       exit( EXIT_FAILURE );
     }
@@ -503,8 +511,9 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
            digitalWrite(choosing+19, 1);
            delay(500);
          */
-        /* ioエキスパンダ版*/
-        write_led(choosing, 0);
+    /* ioエキスパンダ版*/
+    /*
+    write_led(choosing, 0);
         delay(500);
         write_led(choosing, 1);
         delay(500);
@@ -522,11 +531,12 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       }
       exit(EXIT_SUCCESS);
     } else {
+  */
       playReactSound(choosing,keys,wavfileList);
       // 1手目が打たれたら2手目の待機に移動(親プロセス)
       gameState = waitSecondStep;
-    }
   }
+
   return;
 }
 
@@ -537,7 +547,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     choosing = buttonSensing();
     if(blockGotten[choosing] == 0){
       blockGotten[choosing] = 2;
-      if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
+    }}      /*if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
         perror( "ParentProcess shmat error." );
         exit(EXIT_FAILURE);
       }
@@ -557,12 +567,12 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     printf("signal, sig=%d\n", WTERMSIG(status));
   } else {
     printf("abnormal exit\n");
-  }
+    }*/
   /* 共有メモリを破棄 */
-  if (shmctl(segid, IPC_RMID, NULL) == -1){
+  /*if (shmctl(segid, IPC_RMID, NULL) == -1){
     perror("ParentProcess shmctl error.");
     exit(EXIT_FAILURE);
-  }
+    }*/
   for(int i = 0; i < 4; i++){
     //1手目の箇所を探査
     if(i == choosing) continue;
