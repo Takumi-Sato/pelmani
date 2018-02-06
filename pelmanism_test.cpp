@@ -38,7 +38,7 @@
 #define GPIO24 24
 #define GPIO25 25
 #define GPIO26 26
-#define BUTTON_NUM 16
+#define BUTTON_NUM 4
 
 using namespace std;
 
