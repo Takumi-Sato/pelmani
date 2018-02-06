@@ -7,13 +7,19 @@ int main() {
   for(int i=0; i<16; ++i) {
     getchar();
     write_led(i, 1);
-    printf("on %d th button\n", i + 2);
+    printf("on %d th button\n", i);
   }
 
-///* output test
+ for(int i=0; i<16; ++i) {
+    getchar();
+    write_led(i, 0);
+    printf("off %d th button\n", i);
+  }
+
+/* output test
   for(int i=0; i<4; ++i) {
     getchar();
-    write_led(i%4 + 2, 1);
+    write_led(i%4, 1);
     printf("on %d th button\n", i%4 + 2);
   }
 
@@ -22,13 +28,13 @@ int main() {
     write_led(i%4 + 2, 0);
     printf("off %d th button \n", i%4 + 2);
   }
-//*/
+*/
 
 ///* input
-  for(int i=0; i<4; ++i) {
+  for(int i=0; i<16; ++i) {
     getchar();
-    int res = read_switch(i%4 + 2);
-    printf("%d th button is %d\n", i%4 + 2, res);
+    int res = read_switch(i);
+    printf("%d th button is %d\n", i, res);
   }
 //*/
 
