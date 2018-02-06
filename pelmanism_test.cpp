@@ -19,7 +19,10 @@
 #define GPIO9 9
 #define GPIO10 10
 #define GPIO11 11
+#define GPIO12 12
+#define GPIO15 15
 #define GPIO16 16
+#define GPIO17 17
 #define GPIO18 18
 #define GPIO19 19
 #define GPIO20 20
@@ -29,7 +32,7 @@
 #define GPIO24 24
 #define GPIO25 25
 #define GPIO26 26
-#define BUTTON_NUM 4
+#define BUTTON_NUM 16
 
 using namespace std;
 
@@ -42,7 +45,7 @@ void resetResource();
 int translateTextToWav(vector<string> &wavfileList);
 int judgeGameEnd(int* blockGotten, int* keys);
 void onLoadText();
-void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList);
+void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int demoMode);
 void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList);
 void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList);
 void onGameEnd();
@@ -83,9 +86,10 @@ void setPair(int* pair, int fileNum){
   return;
 }
 
-int main(void){
-  int blockGotten[BUTTON_NUM] = {0,0,0,0};
-  int keys[BUTTON_NUM] = {-1,-1,-1,-1};
+int main(int argc, char* argv[]){
+  int blockGotten[BUTTON_NUM];
+  int keys[BUTTON_NUM];
+  int demoMode = (argc == 2) ? 1 : 0;
   vector<string> wavfileList;
 
   if(wiringPiSetupGpio() == -1) return 1;
@@ -110,7 +114,10 @@ int main(void){
   pinMode(GPIO10, OUTPUT);
   pinMode(GPIO11, OUTPUT);
   */
+  pinMode(GPIO12, INPUT);
+  pinMode(GPIO15, INPUT);
   pinMode(GPIO16, OUTPUT);
+  pinMode(GPIO17, INPUT);
   pinMode(GPIO18, INPUT);
   
   if(init_io_expander() == -1) return 1;
@@ -125,7 +132,7 @@ int main(void){
 
         // ゲーム開始
       case gameStart:
-        onGameStart(blockGotten, keys, wavfileList);
+        onGameStart(blockGotten, keys, wavfileList, demoMode);
         break;
 
         // 各ターンの1手目
@@ -169,7 +176,7 @@ int buttonSensing(){
   /* ioエキスパンダ導入時*/
   int sensed = 0; //本来は0
   while(true){
-    if(read_switch(sensed+2)) break;
+    if(read_switch(sensed)) break;
     sensed = (sensed + 1) % BUTTON_NUM;
   }
   return sensed;
@@ -178,10 +185,25 @@ int buttonSensing(){
 void toggleGameMode(int state){
   // state: 0->file waiting, 1->game mode
   // スライダースイッチの仕様確認のこと
-  int input = 0;
-  while(true){
-    input = digitalRead(GPIO18);
-    if(input) return;
+  int fileWait = (state+1)%2;
+  int gameWait = state;
+  if(state) {
+    while(true){
+      fileWait = digitalRead(GPIO12);
+      gameWait = digitalRead(GPIO18);
+      cout << "GPIO12 = " << fileWait << "  GPIO18 = " << gameWait << endl;
+      getchar();
+      if(!fileWait) return;
+    }
+  }
+  else {
+    while(true) {
+      fileWait = digitalRead(GPIO12);
+      gameWait = digitalRead(GPIO18);
+      cout << "ファイル待ちGPIO12 = " << fileWait<< "  GPIO18 = " << gameWait << endl;
+      getchar();
+      if(fileWait) return;
+    }
   }
 }
 
@@ -335,7 +357,7 @@ void onLoadText(){
 }
 
 // ゲーム開始時の処理
-void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
+void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int demoMode){
   int fileNum, rnd1, rnd2;
   string name_asset_path, neta_asset_path, rnd_name, rnd_neta;
 
@@ -370,8 +392,8 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
     // 特に変更箇所はなし
     rnd1 = rand() % 10;
     rnd2 = rand() % 10;
-    name_asset_path = "/home/xiao/pelmani/name_asset/asset";
-    neta_asset_path = "/home/xiao/pelmani/neta_asset/asset";
+    name_asset_path = "/home/xiao/pelmani/name_asset/mei_asset";
+    neta_asset_path = "/home/xiao/pelmani/neta_asset/mei_asset";
     for(int i = 0; i < BUTTON_NUM/2 - 1 - fileNum; i++){
       rnd_name = name_asset_path + to_string(rnd1)+".wav";
       rnd_neta = name_asset_path + to_string(rnd2)+".wav";
@@ -381,24 +403,36 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
       rnd1 = (rnd2 + 7) % 10;
     }
 
-    // setPairはドボンマスの考慮を入れる
-    setPair(keys, fileNum);
-
+    // setPairはデモモード、ドボンマスの考慮を入れる
+    if(demoMode){
+      int key_val = 0;
+      for(int i = 0; i < BUTTON_NUM/2 ; i++){
+        keys[i*2] = key_val;
+        keys[i*2+1] = key_val++;
+      }
+    } else {
+      setPair(keys, fileNum);
+    }
+    /*  
     int timer = 5;
     while(timer){
-      /*
+    */
+    /*
          digitalWrite(GPIO19, rand()%2);
          digitalWrite(GPIO20, rand()%2);
          digitalWrite(GPIO21, rand()%2);
          digitalWrite(GPIO22, rand()%2);
        */
       /* ioエキスパンダ*/
+/*
       for(int i = 0; i < BUTTON_NUM; i++){
-        write_led(i+2, rand()%2);
+        write_led(i, rand()%2);
       }
+
       timer--;
       delay(300);
     }
+*/
     /*
        digitalWrite(GPIO19, 1);
        digitalWrite(GPIO20, 1);
@@ -407,7 +441,7 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList){
      */
     /* ioエキスパンダ */
     for(int i = 0; i < BUTTON_NUM; i++){
-      write_led(i+2, 1);
+      write_led(i, 1);
     }
 
     // 音声「ゲームを開始します」
@@ -433,8 +467,8 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     // ドボン！
     /* digitalWrite(choosing+19, 0);*/
     /* ioエキスパンダ*/
-    write_led(choosing+2, 0);
-    system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+    write_led(choosing, 0);
+    system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
   } else {
@@ -470,9 +504,9 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
            delay(500);
          */
         /* ioエキスパンダ版*/
-        write_led(choosing+2, 0);
+        write_led(choosing, 0);
         delay(500);
-        write_led(choosing+2, 1);
+        write_led(choosing, 1);
         delay(500);
 
         if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
@@ -536,9 +570,9 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       if(keys[choosing] == -1){ // ドボンマスにヒット
         blockGotten[choosing] = 1;
         blockGotten[i] = 0;
-        write_led(choosing+2, 0);
+        write_led(choosing, 0);
         // ドボン！
-        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");//仮の音声(ペア不一致とは分けたい)
+        system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
@@ -549,17 +583,17 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
            digitalWrite(choosing + 19, 0);
          */
         /* ioエキスパンダ */
-        write_led(i+2, 0);
-        write_led(choosing+2, 0);
+        write_led(i, 0);
+        write_led(choosing, 0);
         playReactSound(choosing,keys,wavfileList);
-        system("sudo aplay /home/xiao/wavmusic/rightAnswer.wav");
+        system("sudo aplay /home/xiao/pelmani/react_sound/correct.wav");
         playReactSound(choosing,keys,wavfileList);
         playComingOut((keys[choosing] * 2 + 1), wavfileList);
       } else { //ペアになってない
         blockGotten[choosing] = 0;
         blockGotten[i] = 0;
         playReactSound(choosing,keys,wavfileList);
-        system("sudo aplay /home/xiao/wavmusic/badAnswer.wav");
+        system("sudo aplay /home/xiao/pelmani/react_sound/incorrect.wav");
         // 音声「次の人に交代してください」
         system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
       }
@@ -568,7 +602,7 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
 
   if(judgeGameEnd(blockGotten, keys)){    
     // ゲームが終了するならゲーム終了状態へ移行
-    system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
+    // ゲーム終了時のサウンドあれば　system("sudo aplay /home/xiao/wavmusic/gameEnd.wav");
     gameState = gameEnd;
   } else {
     // ゲームが続くなら1手目に戻る
