@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    
+    <link rel="stylesheet" href="./css/index.css">
+    <script src="./jquery-3.3.1.min.js"</script>
+    <script src="./bxslider-4-4.2.12/dist/jquery.bxslider.min.js"></script>
+    <link href="./bxslider-4-4.2.12/dist/jquery.bxslider.css" rel="stylesheet" />
+    <title>Pelmanion</title>
+</head>
+<body>
+    <header class="header"></header>
+    <div class="contents">
+        <div class="title">
+            <img src="pic/logo.png" alt="logo">
+        </div>
+        <div class="caption">
+            <p>Pelmanionは神経衰弱と音を組み合わせた暴露型パーティーゲームです.</br>
+                ここでは絵柄ではなく, その場で登録する「人の名前」を揃えます.</br>
+                名前が揃うと, その人の秘密が暴露されてしまいます.<br>
+            </p>
+        </div>
+        <div class="slider_host">
+        <h2>遊び方</h2>
+            <div class="slider">
+                <div><img src="pic/pic1.jpg"></div>
+                <div><img src="pic/pic2.jpg"></div>
+                <div><img src="pic/pic3.jpg"></div>
+            </div><!--slider-->
+        </div><!--slider_host-->
+        <div class="post_method">
+        <h2>テキスト入力</h2>
+        <div class="post_form">
+	  <!--<form method="post" action="comp.html" name="post">-->
+            <form method="post" action="http://172.16.0.1/cgi-bin/register.py" name="post">
+                </br><input type="text" name="name" placeholder="名前" class="name"> さんのカミングアウト！</br>
+                <p class="p_tag"></br><textarea name="text" rows="3" placeholder="内容" class="text"></textarea></p>
+                <p class="p_tag"><input type="submit" value="送信" class="submit"></p>
+            </form>
+            </div>
+        </div><!--post_method-->
+        <footer class="footer">CampusOJT-SW   9th</footer>
+    </div><!--contents-->
+  <script type="text/javascript">
+    $(function(){
+    $('.slider').bxSlider({
+    auto:false,
+    speed:1000,
+    infiniteLoop: false,
+    hideControlOnEnd: true
+        });
+    });
+    </script>
+</body>
+</html>
