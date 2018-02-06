@@ -15,11 +15,17 @@
 #include <sys/shm.h>
 #include "spi_api.h"
 
+#define GPIO4 4
+#define GPIO5 5
+#define GPIO6 6
+#define GPIO7 7
 #define GPIO8 8
 #define GPIO9 9
 #define GPIO10 10
 #define GPIO11 11
 #define GPIO12 12
+#define GPIO13 13
+#define GPIO14 14
 #define GPIO15 15
 #define GPIO16 16
 #define GPIO17 17
@@ -93,34 +99,39 @@ int main(int argc, char* argv[]){
   vector<string> wavfileList;
 
   if(wiringPiSetupGpio() == -1) return 1;
+  pinMode(GPIO4, OUTPUT);  // LED1
+  pinMode(GPIO5, OUTPUT);  // LED2
+  pinMode(GPIO6, OUTPUT);  // LED3
+  pinMode(GPIO7, OUTPUT);  // LED4
+  pinMode(GPIO8, OUTPUT);  // LED5
+  pinMode(GPIO9, OUTPUT);  // LED6
+  pinMode(GPIO10, OUTPUT); // LED7
+  pinMode(GPIO11, OUTPUT); // LED8
+  
+  pinMode(GPIO14, INPUT);  // SWITCH1
+  pinMode(GPIO15, INPUT);  // SWITCH2
+  pinMode(GPIO16, INPUT);  // SWITCH3
+  pinMode(GPIO17, INPUT);  // SWITCH4
+  pinMode(GPIO18, INPUT);  // SWITCH5
+  pinMode(GPIO19, INPUT);  // SWITCH6
+  pinMode(GPIO20, INPUT);  // SWITCH7
+  pinMode(GPIO21, INPUT);  // SWITCH8
 
-  /*  
-      pinMode(GPIO19,OUTPUT);
-      pinMode(GPIO20,OUTPUT);
-      pinMode(GPIO21,OUTPUT);
-      pinMode(GPIO22,OUTPUT);
-
-      pinMode(GPIO18,INPUT);
-      pinMode(GPIO23,INPUT);
-      pinMode(GPIO24,INPUT);
-      pinMode(GPIO25,INPUT);
-      pinMode(GPIO26,INPUT);
-   */
+  pinMode(GPIO26, INPUT);  //ChangeGameModeButton
+     
   /* ioエキスパンダの初期設定*/
-
-  pinMode(GPIO8, OUTPUT);
   /*
+  pinMode(GPIO8, OUTPUT);
   pinMode(GPIO9, INPUT); 
   pinMode(GPIO10, OUTPUT);
   pinMode(GPIO11, OUTPUT);
-  */
   pinMode(GPIO12, INPUT);
   pinMode(GPIO15, INPUT);
   pinMode(GPIO16, OUTPUT);
   pinMode(GPIO17, INPUT);
   pinMode(GPIO18, INPUT);
-  
-  if(init_io_expander() == -1) return 1;
+  */
+  // if(init_io_expander() == -1) return 1;
 
   while(true) {
     switch(gameState) {
@@ -160,32 +171,28 @@ int main(int argc, char* argv[]){
 }
 
 int buttonSensing(){
-  /*
-     int status[BUTTON_NUM];
-     while(true){
-     status[0] = digitalRead(GPIO23);
-     status[1] = digitalRead(GPIO24);
-     status[2] = digitalRead(GPIO25);
-     status[3] = digitalRead(GPIO26);
-     if(status[0]) return 0;
-     if(status[1]) return 1;
-     if(status[2]) return 2;
-     if(status[3]) return 3;
-     }
-   */
+  int which = 0;
+  while(true){
+    if(digitalRead(which + 14)) return which;
+    which = (which + 1) % BUTTON_NUM;
+  }
   /* ioエキスパンダ導入時*/
+  /*
   int sensed = 0; //本来は0
   while(true){
     if(read_switch(sensed)) break;
     sensed = (sensed + 1) % BUTTON_NUM;
   }
   return sensed;
+  */
 }
 
 void toggleGameMode(int state){
   // state: 0->file waiting, 1->game mode
-  // スライダースイッチの仕様確認のこと
-  int fileWait = (state+1)%2;
+  while(true) {
+    if(digitalRead(GPIO26)) return;
+  }
+  /*int fileWait = (state+1)%2;
   int gameWait = state;
   if(state) {
     while(true){
@@ -204,7 +211,7 @@ void toggleGameMode(int state){
       getchar();
       if(fileWait) return;
     }
-  }
+  }*/
 }
 
 void playReactSound(int choosing, int* keys, vector<string> &wavfileList){
@@ -412,37 +419,29 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int d
       }
     } else {
       setPair(keys, fileNum);
-    }
-    /*  
+    } 
     int timer = 5;
     while(timer){
-    */
-    /*
-         digitalWrite(GPIO19, rand()%2);
-         digitalWrite(GPIO20, rand()%2);
-         digitalWrite(GPIO21, rand()%2);
-         digitalWrite(GPIO22, rand()%2);
-       */
+      for(int i = 0 ; i < BUTTON_NUM; i++){
+         digitalWrite(i+4, rand()%2);
+      }
       /* ioエキスパンダ*/
-/*
+      /*
       for(int i = 0; i < BUTTON_NUM; i++){
         write_led(i, rand()%2);
-      }
-
+      }*/
       timer--;
       delay(300);
     }
-*/
-    /*
-       digitalWrite(GPIO19, 1);
-       digitalWrite(GPIO20, 1);
-       digitalWrite(GPIO21, 1);
-       digitalWrite(GPIO22, 1);
-     */
+    for(int i = 0 ; i< BUTTON_NUM; i++){
+      digitalWrite(i+4, 1);
+    }
+     
     /* ioエキスパンダ */
+    /*
     for(int i = 0; i < BUTTON_NUM; i++){
       write_led(i, 1);
-    }
+    }*/
 
     // 音声「ゲームを開始します」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset1.wav");
@@ -465,9 +464,9 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
   if(keys[choosing] == -1) {
     blockGotten[choosing] = 1;
     // ドボン！
-    /* digitalWrite(choosing+19, 0);*/
+    digitalWrite(choosing+4, 0);
     /* ioエキスパンダ*/
-    write_led(choosing, 0);
+    //write_led(choosing, 0);
     system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
     // 音声「次の人に交代してください」
     system("sudo aplay /home/xiao/pelmani/play_asset/mei_asset4.wav");
@@ -497,17 +496,16 @@ void onFirstStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
         exit(EXIT_FAILURE);
       }
       while(true){
-        /*
-           digitalWrite(choosing+19, 0);
-           delay(500);
-           digitalWrite(choosing+19, 1);
-           delay(500);
-         */
+        digitalWrite(choosing+4, 0);
+        delay(500);
+        digitalWrite(choosing+4, 1);
+        delay(500);
         /* ioエキスパンダ版*/
+        /*
         write_led(choosing, 0);
         delay(500);
         write_led(choosing, 1);
-        delay(500);
+        delay(500);*/
 
         if ((segaddr = (int *)shmat(segid, NULL, 0)) == (void *)-1) {
           perror( "ChildProcess shmat error." );
@@ -563,14 +561,15 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
     perror("ParentProcess shmctl error.");
     exit(EXIT_FAILURE);
   }
-  for(int i = 0; i < 4; i++){
+  for(int i = 0; i < BUTTON_NUM; i++){
     //1手目の箇所を探査
     if(i == choosing) continue;
     if(blockGotten[i] == 2){
       if(keys[choosing] == -1){ // ドボンマスにヒット
         blockGotten[choosing] = 1;
         blockGotten[i] = 0;
-        write_led(choosing, 0);
+        // write_led(choosing, 0);
+        digitalWrite(choosing+4, 0);
         // ドボン！
         system("sudo aplay /home/xiao/pelmani/react_sound/dobon1.wav");//仮の音声(ペア不一致とは分けたい)
         // 音声「次の人に交代してください」
@@ -578,13 +577,12 @@ void onSecondStep(int* blockGotten, int* keys, vector<string> &wavfileList) {
       } else if(keys[choosing] == keys[i]){ // ペアになってる！
         blockGotten[choosing] = 1;
         blockGotten[i] = 1;
-        /*
-           digitalWrite(i + 19, 0);
-           digitalWrite(choosing + 19, 0);
-         */
+        digitalWrite(i + 4, 0);
+        digitalWrite(choosing + 4, 0);
         /* ioエキスパンダ */
+        /*
         write_led(i, 0);
-        write_led(choosing, 0);
+        write_led(choosing, 0);*/
         playReactSound(choosing,keys,wavfileList);
         system("sudo aplay /home/xiao/pelmani/react_sound/correct.wav");
         playReactSound(choosing,keys,wavfileList);
