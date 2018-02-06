@@ -110,12 +110,12 @@ int main(int argc, char* argv[]){
   
   pinMode(GPIO14, INPUT);  // SWITCH1
   pinMode(GPIO15, INPUT);  // SWITCH2
-  pinMode(GPIO16, INPUT);  // SWITCH3
-  pinMode(GPIO17, INPUT);  // SWITCH4
-  pinMode(GPIO18, INPUT);  // SWITCH5
-  pinMode(GPIO19, INPUT);  // SWITCH6
-  pinMode(GPIO20, INPUT);  // SWITCH7
-  pinMode(GPIO21, INPUT);  // SWITCH8
+  pinMode(GPIO18, INPUT);  // SWITCH3
+  pinMode(GPIO19, INPUT);  // SWITCH4
+  pinMode(GPIO20, INPUT);  // SWITCH5
+  pinMode(GPIO21, INPUT);  // SWITCH6
+  pinMode(GPIO22, INPUT);  // SWITCH7
+  pinMode(GPIO23, INPUT);  // SWITCH8
 
   pinMode(GPIO26, INPUT);  //ChangeGameModeButton
      
@@ -173,8 +173,11 @@ int main(int argc, char* argv[]){
 int buttonSensing(){
   int which = 0;
   while(true){
-    if(digitalRead(which + 14)) return which;
-    which = (which + 1) % BUTTON_NUM;
+    if(digitalRead(which + 14)){
+      if(which > 3) which = which - 2;
+      return which;
+    }
+    which = (which + 1) % (BUTTON_NUM+2);
   }
   /* ioエキスパンダ導入時*/
   /*
@@ -368,15 +371,19 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int d
   int fileNum, rnd1, rnd2;
   string name_asset_path, neta_asset_path, rnd_name, rnd_neta;
 
-  init_io_expander();
-
   // マス取得状態とマスに割り当てられているkeyの初期化
   for(int i = 0; i < BUTTON_NUM; i++){
     blockGotten[i] = 0;
     keys[i] = -1;
   }
   wavfileList.clear();
-
+  /*
+  cout << "keys初期: ";
+  for(int i = 0 ; i < BUTTON_NUM; i++){
+    cout << keys[i] << ", ";
+  }
+  cout << endl;
+  */
   // wavfileListをすでに参照で受け取っているのでこの関数呼び出しは不正になるかも. コンパイルエラー時注意.
   fileNum = translateTextToWav(wavfileList);
   NETA_NUM = fileNum;
@@ -415,11 +422,19 @@ void onGameStart(int* blockGotten, int* keys, vector<string> &wavfileList, int d
       int key_val = 0;
       for(int i = 0; i < BUTTON_NUM/2 ; i++){
         keys[i*2] = key_val;
-        keys[i*2+1] = key_val++;
+        keys[i*2+1] = key_val;
+	key_val++;
       }
     } else {
       setPair(keys, fileNum);
-    } 
+    }
+    /*
+    cout << "keys設定後: ";
+      for(int i = 0 ; i < BUTTON_NUM; i++){
+	cout << keys[i] << ", ";
+      }
+    cout << endl;
+    */
     int timer = 5;
     while(timer){
       for(int i = 0 ; i < BUTTON_NUM; i++){
