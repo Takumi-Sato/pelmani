@@ -8,7 +8,7 @@ pelmanion: pelmanism_test.o spi_api.o
 pelmanism_test.o: pelmanism_test.cpp
 	$(CC) $(CFLAGS) -c pelmanism_test.cpp $(WIRINGPI)
 
-spi_api.o: spi_api.cpp
+spi_api.o: spi_api.cpp spi_api.h
 	$(CC) $(CFLAGS) -c spi_api.cpp $(WIRINGPI)
 
 expander_test: expander_test.o spi_api.o
